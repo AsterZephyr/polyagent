@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Go API Gateway
+  api-gateway:
+    build:
+      context: ./go-services/gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_URL=postgres://user:pass@postgres:5432/polyagent
+      - PYTHON_AI_URL=http://python-ai:8000
+    depends_on:
+      - redis
+      - postgres
+      - python-ai
+
+  # Go Task Scheduler  
+  scheduler:
+    build:
+      context: ./go-services/scheduler
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_URL=postgres://user:pass@postgres:5432/polyagent
+    depends_on:
+      - redis
+      - postgres
+
+  # Python AI Core
+  python-ai:
+    build:
+      context: ./python-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_URL=postgres://user:pass@postgres:5432/polyagent
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+    depends_on:
+      - redis
+      - postgres
+      - chromadb
+
+  # Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=polyagent
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend/web
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+  chromadb_data:
