@@ -1,186 +1,351 @@
-# PolyAgent - 多语言智能体系统
+# PolyAgent: Next-Generation AI Agent Platform
 
-> 基于 Go + Python 混合架构的企业级智能体平台，支持多 AI 模型集成和个性化 RAG
+PolyAgent is a cutting-edge multi-language AI agent platform built with a hybrid Go and Python architecture. Drawing inspiration from advanced agent frameworks, it provides enterprise-grade AI capabilities with state-of-the-art RAG (Retrieval-Augmented Generation) systems and multi-provider AI integration.
 
-## 🚀 项目特性
+## Architecture Overview
 
-- **🔥 混合架构**: Go 高性能服务层 + Python AI 计算层
-- **🤖 多智能体**: 支持对话、RAG、代码、工具等多种智能体
-- **🔌 多模型**: 集成 OpenAI、Claude、通义千问等主流 AI 模型  
-- **📚 智能 RAG**: 个性化知识库检索增强生成
-- **🛠️ 工具生态**: 可扩展的工具调用和插件系统
-- **💾 记忆管理**: 长期对话记忆和上下文管理
-- **🔄 流式输出**: 实时响应和渐进式结果展示
-
-## 🏗️ 系统架构
+The platform employs a modern microservices architecture designed for scalability, performance, and maintainability:
 
 ```
-Frontend (React/CLI)
-        ↓
-  Go API Gateway (8080)
-        ↓
-┌─────────────────┬─────────────────┐
-│  Task Scheduler │   Data Storage  │
-│   (Goroutines)  │ (Redis/Postgres)│
-└─────────────────┴─────────────────┘
-        ↓
-Python AI Core (8000)
-        ↓
-┌──────────────┬─────────────────┬─────────────────┐
-│ Multi-AI API │  RAG Engine     │  Agent System   │
-│   Adapter    │ (ChromaDB)      │ (Tools/Memory)  │
-└──────────────┴─────────────────┴─────────────────┘
+Frontend Layer (React + TypeScript)
+         │
+         ▼
+┌─────────────────────┐
+│   API Gateway (Go)  │  ← Authentication, Rate Limiting, Load Balancing
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│  Core Services      │
+│  ┌─── Scheduler     │  ← Task Queue Management
+│  ├─── Storage       │  ← PostgreSQL + Redis
+│  └─── Registry      │  ← Agent Management
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│   AI Engine (Python)│
+│  ┌─── RAG System    │  ← Advanced Retrieval Engine
+│  ├─── Agent Core    │  ← Reasoning & Planning
+│  ├─── Tool Manager  │  ← Function Calling
+│  └─── Memory System │  ← Context Management
+└─────────────────────┘
 ```
 
-## 📁 项目结构
+## Core Technologies
+
+### Backend Stack
+- **Go Services**: High-performance API gateway, task scheduling, data management
+- **Python AI Engine**: Advanced machine learning, natural language processing
+- **PostgreSQL**: Primary data storage with ACID compliance
+- **Redis**: Caching layer and real-time data management
+- **Docker**: Containerized deployment and orchestration
+
+### AI & ML Stack
+- **Multi-Provider Support**: OpenAI GPT, Anthropic Claude, local models
+- **Vector Databases**: ChromaDB and Pinecone for semantic search
+- **Knowledge Graphs**: NetworkX-based entity relationship modeling
+- **NLP Processing**: spaCy, jieba, NLTK for multilingual text processing
+- **Embedding Models**: Sentence Transformers for semantic understanding
+
+### Frontend Stack
+- **React 18**: Modern component-based UI framework
+- **TypeScript**: Type-safe development environment
+- **Vite**: Fast build tooling and hot module replacement
+- **Tailwind CSS**: Utility-first styling framework
+- **React Query**: Server state management and caching
+
+## Advanced RAG System
+
+Our RAG implementation represents the current state-of-the-art in retrieval-augmented generation:
+
+### Hybrid Retrieval Architecture
+The system combines multiple retrieval strategies for optimal performance:
 
 ```
-polyagent/
-├── go-services/           # Go 服务层
-│   ├── gateway/          # API 网关服务
-│   ├── scheduler/        # 任务调度服务  
-│   ├── storage/          # 数据存储服务
-│   ├── registry/         # 智能体注册中心
-│   └── plugins/          # 插件系统
-├── python-ai/            # Python AI 层
-│   ├── adapter/          # AI 模型适配器
-│   ├── core/             # 智能体核心逻辑
-│   ├── rag/              # RAG 检索系统
-│   ├── tools/            # 工具调用管理
-│   └── memory/           # 记忆管理系统
-├── frontend/             # 前端层
-│   ├── web/              # Web 管理界面
-│   ├── cli/              # 命令行工具
-│   └── sdk/              # 客户端 SDK
-└── docs/                 # 文档
-    ├── api/              # API 接口文档
-    ├── architecture/     # 架构设计文档
-    └── deployment/       # 部署运维文档
+Query Input
+    │
+    ▼
+┌─────────────────────┐
+│  Query Processor    │  ← Entity Recognition, Query Expansion
+└─────────────────────┘
+    │
+    ▼
+┌─────────────────────┐
+│  Hybrid Retriever   │
+│  ├─── Vector Search │  ← Semantic similarity
+│  ├─── Keyword Search│  ← Traditional text matching
+│  └─── Graph Search  │  ← Knowledge graph traversal
+└─────────────────────┘
+    │
+    ▼
+┌─────────────────────┐
+│  Multi-Layer Rerank │  ← Semantic, diversity, relevance scoring
+└─────────────────────┘
+    │
+    ▼
+Refined Results
 ```
 
-## 🛠️ 技术栈
+### Key RAG Features
 
-### 后端服务
-- **Go**: Gin + gRPC + Redis + PostgreSQL
-- **Python**: FastAPI + LangChain + ChromaDB
+**Query Enhancement**
+- Multilingual entity recognition using spaCy and jieba
+- Automatic synonym expansion and semantic variation generation
+- Intent classification for query understanding
+- Context-aware query rewriting
 
-### AI 集成  
-- **模型**: OpenAI GPT、Claude、通义千问等
-- **向量数据库**: ChromaDB / Pinecone
-- **工具框架**: LangChain + 自定义工具
+**Knowledge Graph Integration**
+- Automatic entity and relationship extraction from documents
+- Graph-based reasoning for complex queries
+- Entity linking and disambiguation
+- Relationship-aware retrieval strategies
 
-### 前端交互
-- **Web UI**: React + TypeScript + Ant Design
-- **CLI**: Go Cobra + 交互式命令行
-- **部署**: Docker + Kubernetes
+**Advanced Reranking**
+- Cross-encoder semantic reranking
+- Multi-factor scoring (relevance, diversity, recency)
+- Source diversification algorithms
+- Quality-based filtering
 
-## 🚀 快速开始
+**Document Intelligence**
+- Semantic chunking with quality scoring
+- Multi-modal document processing (text, PDF, images)
+- Automatic metadata extraction
+- Content classification and tagging
 
-### 环境要求
+## Agent Architecture
+
+Our agent system implements cutting-edge reasoning patterns and memory management:
+
+### Core Agent Capabilities
+
+**Reasoning Engine**
+- Chain-of-Thought (CoT) reasoning for complex problems
+- Plan-and-Execute pattern for multi-step tasks
+- Self-reflection and error correction mechanisms
+- Dynamic strategy selection based on task complexity
+
+**Memory Management**
+- Short-term working memory for current conversations
+- Long-term episodic memory for user interactions
+- Semantic memory for knowledge retention
+- Procedural memory for learned skills and patterns
+
+**Tool Integration**
+- Dynamic tool discovery and registration
+- Intelligent tool selection and orchestration
+- Error handling and retry mechanisms
+- Tool result validation and interpretation
+
+## Development Status
+
+### Completed Components
+
+**Infrastructure Layer**
+- Microservices architecture with Go and Python
+- API gateway with authentication and rate limiting
+- Task scheduling system with priority queues
+- Redis-based caching and session management
+- PostgreSQL data persistence layer
+
+**AI Integration Layer**
+- Multi-provider AI adapter system (OpenAI, Anthropic)
+- Unified streaming response handling
+- Function calling framework
+- Error handling and fallback mechanisms
+
+**Advanced RAG System**
+- Complete hybrid retrieval implementation
+- Knowledge graph construction and querying
+- Multi-layer reranking pipeline
+- Query expansion and entity processing
+- Document processing and vectorization
+
+### In Development
+
+**Agent Core System**
+- Reasoning chain implementation
+- Memory management architecture
+- Task planning and execution framework
+- Self-monitoring and adaptation capabilities
+
+**Frontend Application**
+- React-based management interface
+- Real-time chat and interaction components
+- System monitoring and analytics dashboard
+- User management and configuration panels
+
+**Production Features**
+- Kubernetes deployment configurations
+- Monitoring and observability stack
+- Security hardening and compliance
+- Performance optimization and scaling
+
+## Quick Start
+
+### Prerequisites
 - Go 1.21+
 - Python 3.11+
-- Docker & Docker Compose
-- Redis 7+
+- Docker and Docker Compose
 - PostgreSQL 15+
+- Redis 7+
 
-### 启动服务
+### Installation
+
+1. **Clone the repository**
 ```bash
-# 克隆项目
-git clone https://github.com/polyagent/polyagent.git
+git clone https://github.com/your-org/polyagent.git
 cd polyagent
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，填入 API Keys
-
-# 启动所有服务
-docker-compose up -d
-
-# 访问服务
-# Web UI: http://localhost:3000  
-# API: http://localhost:8080
-# Python AI: http://localhost:8000
 ```
 
-### 开发模式
+2. **Start infrastructure services**
 ```bash
-# 启动 Go 服务
+docker-compose up -d postgres redis
+```
+
+3. **Initialize Go services**
+```bash
 cd go-services
-go run main.go
-
-# 启动 Python AI 服务  
-cd python-ai
-python -m uvicorn main:app --reload --port 8000
-
-# 启动前端
-cd frontend/web
-npm install && npm start
+go mod download
+go run gateway/main.go
 ```
 
-## 📖 API 文档
-
-### 对话接口
+4. **Start Python AI engine**
 ```bash
-curl -X POST http://localhost:8080/api/v1/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "你好，帮我分析一下今天的股市行情",
-    "agent_type": "rag",
-    "tools": ["web_search", "stock_analyzer"]
-  }'
+cd python-ai
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
 ```
 
-### 文档上传
-```bash  
-curl -X POST http://localhost:8080/api/v1/documents/upload \
-  -F "file=@document.pdf" \
-  -F "user_id=user123"
+5. **Launch frontend application**
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-详细 API 文档: [docs/api/README.md](docs/api/README.md)
+### Configuration
 
-## 🔧 配置说明
+Create a `.env` file with your API keys and configuration:
 
-### AI 模型配置
-```yaml
-ai_models:
-  openai:
-    api_key: "your-openai-key"
-    base_url: "https://api.openai.com/v1"
-    models: ["gpt-4", "gpt-3.5-turbo"]
-  
-  claude:
-    api_key: "your-claude-key" 
-    models: ["claude-3-sonnet", "claude-3-haiku"]
+```env
+# AI Provider Keys
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# Database Configuration
+POSTGRES_URL=postgresql://user:pass@localhost:5432/polyagent
+REDIS_URL=redis://localhost:6379
+
+# Vector Database
+VECTOR_STORE_TYPE=chromadb
+CHROMADB_HOST=localhost
+CHROMADB_PORT=8000
+
+# Application Settings
+DEBUG=true
+LOG_LEVEL=info
 ```
 
-### RAG 系统配置
-```yaml
-rag:
-  vector_db: "chromadb"  # chromadb / pinecone
-  chunk_size: 1000
-  overlap: 200
-  top_k: 5
+## API Documentation
+
+### Core Endpoints
+
+**Agent Interaction**
+```http
+POST /api/v1/chat
+Content-Type: application/json
+
+{
+  "message": "Analyze the quarterly sales data",
+  "user_id": "user123",
+  "session_id": "session456"
+}
 ```
 
-## 🤝 贡献指南
+**Document Management**
+```http
+POST /api/v1/documents
+Content-Type: multipart/form-data
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+{
+  "file": [binary data],
+  "user_id": "user123",
+  "metadata": {
+    "category": "reports",
+    "tags": ["sales", "q4"]
+  }
+}
+```
 
-## 📄 许可证
+**RAG Queries**
+```http
+GET /api/v1/rag/search?q=market analysis&top_k=10&user_id=user123
+```
 
-本项目采用 [MIT](LICENSE) 许可证
+## Contributing
 
-## 📞 联系方式
+We welcome contributions from the community. Please read our Contributing Guidelines and Code of Conduct before submitting pull requests.
 
-- 项目主页: https://github.com/polyagent/polyagent
-- 文档网站: https://docs.polyagent.dev
-- 讨论社区: https://discord.gg/polyagent
+### Development Workflow
 
----
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-**PolyAgent** - 让每个人都能拥有自己的智能体助手 🤖✨
+### Testing
+
+Run the test suite to ensure your changes don't break existing functionality:
+
+```bash
+# Go services tests
+cd go-services
+go test ./...
+
+# Python AI tests
+cd python-ai
+python -m pytest
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Roadmap
+
+### Q1 2025
+- Complete agent reasoning engine implementation
+- Launch React frontend with full functionality
+- Production deployment automation
+- Comprehensive security audit
+
+### Q2 2025
+- Multi-modal support (images, audio)
+- Advanced workflow orchestration
+- Third-party integrations marketplace
+- Mobile application development
+
+### Q3 2025
+- Enterprise features and compliance
+- Advanced analytics and insights
+- Multi-tenant architecture
+- Global deployment infrastructure
+
+## Support
+
+For support, documentation, and community discussions:
+
+- **Documentation**: Complete API and architecture documentation
+- **Issues**: GitHub Issues for bug reports and feature requests
+- **Discussions**: Community discussions and help
+- **Email**: Technical support and enterprise inquiries
+
+Built with precision engineering for the next generation of AI applications.

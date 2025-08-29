@@ -155,8 +155,8 @@ class QueryProcessor(LoggerMixin):
         
         # 技术术语模式
         tech_patterns_zh = [[{"LOWER": {"IN": ["api", "sdk", "框架", "算法", "机器学习"]}}]]
-        tech_patterns_en = [[{"LOWER": {"IN": ["api", "sdk", "framework", "algorithm", "machine"]}, 
-                             {"LOWER": "learning", "OP": "?"}}]]
+        tech_patterns_en = [[{"LOWER": {"IN": ["api", "sdk", "framework", "algorithm", "machine"]}}, 
+                             {"LOWER": "learning", "OP": "?"}]]
         
         self.zh_matcher.add("TECH_TERM", tech_patterns_zh)
         self.en_matcher.add("TECH_TERM", tech_patterns_en)
