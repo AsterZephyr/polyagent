@@ -11,15 +11,23 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/polyagent/go-services/gateway/handlers"
 	"github.com/polyagent/go-services/gateway/middleware"
 	"github.com/polyagent/go-services/internal/ai"
 	"github.com/polyagent/go-services/internal/config"
 	"github.com/polyagent/go-services/internal/scheduler"
 	"github.com/polyagent/go-services/internal/storage"
+	"github.com/polyagent/go-services/internal/metrics"
+	"github.com/polyagent/go-services/internal/websocket"
 )
 
 func main() {
+	// 初始化指标收集
+	metrics.InitMetrics()
+	
 	// 加载配置
 	cfg, err := config.Load()
 	if err != nil {
@@ -70,9 +78,12 @@ func main() {
 	userHandler := handlers.NewUserHandler(postgres, redis)
 	healthHandler := handlers.NewHealthHandler(postgres, redis, aiClient)
 
-	// 健康检查路由
+	// 健康检查和监控路由
 	r.GET("/health", healthHandler.HealthCheck)
-	r.GET("/metrics", healthHandler.Metrics)
+	r.GET("/readiness", healthHandler.ReadinessCheck)
+	r.GET("/liveness", healthHandler.LivenessCheck)
+	r.GET("/metrics", promhttp.Handler())
+	r.GET("/status", healthHandler.SystemStatus)
 
 	// API路由组
 	api := r.Group("/api/v1")
@@ -141,6 +152,11 @@ func main() {
 	}
 
 	// WebSocket路由
+	ws := websocket.NewHub()
+	go ws.Run()
+	r.GET("/ws/chat/:session_id", func(c *gin.Context) {
+		websocket.HandleWebSocket(ws, c)
+	})
 	r.GET("/ws", chatHandler.WebSocketHandler)
 
 	// 静态文件服务（如果需要）

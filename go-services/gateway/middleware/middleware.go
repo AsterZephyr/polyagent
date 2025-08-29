@@ -12,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/polyagent/go-services/internal/config"
 	"github.com/polyagent/go-services/internal/storage"
+	"github.com/polyagent/go-services/internal/metrics"
 )
 
 // Logger 日志中间件

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"runtime"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/polyagent/go-services/internal/ai"
 	"github.com/polyagent/go-services/internal/storage"
+	"github.com/polyagent/go-services/internal/monitoring"
 )
 
 // HealthHandler 健康检查处理器
@@ -15,14 +17,24 @@ type HealthHandler struct {
 	postgres *storage.PostgresStorage
 	redis    *storage.RedisStorage
 	aiClient *ai.PythonAIClient
+	healthMonitor *monitoring.HealthMonitor
 }
 
 // NewHealthHandler 创建健康检查处理器
 func NewHealthHandler(postgres *storage.PostgresStorage, redis *storage.RedisStorage, aiClient *ai.PythonAIClient) *HealthHandler {
+	// 创建健康监控器
+	healthMonitor := monitoring.NewHealthMonitor("1.0.0")
+	
+	// 注册健康检查器
+	healthMonitor.RegisterChecker(monitoring.NewPostgresHealthChecker(postgres))
+	healthMonitor.RegisterChecker(monitoring.NewRedisHealthChecker(redis))
+	healthMonitor.RegisterChecker(monitoring.NewAIServiceHealthChecker("http://localhost:8000"))
+	
 	return &HealthHandler{
 		postgres: postgres,
 		redis:    redis,
 		aiClient: aiClient,
+		healthMonitor: healthMonitor,
 	}
 }
 
@@ -57,47 +69,74 @@ type MetricsInfo struct {
 
 var startTime = time.Now()
 
+// ReadinessCheck 就绪检查
+func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
+	ctx := context.WithValue(c.Request.Context(), "request_id", c.GetString("request_id"))
+	
+	// 检查关键组件是否就绪
+	health := h.healthMonitor.CheckHealth(ctx)
+	
+	// 就绪检查不允许任何关键组件失败
+	for _, component := range health.Components {
+		if component.Status == monitoring.StatusCritical {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status": "not_ready",
+				"message": "Critical component failure: " + component.Name,
+				"timestamp": time.Now(),
+			})
+			return
+		}
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"status": "ready",
+		"timestamp": time.Now(),
+	})
+}
+
+// LivenessCheck 存活检查
+func (h *HealthHandler) LivenessCheck(c *gin.Context) {
+	// 存活检查只检查应用程序本身是否运行
+	c.JSON(http.StatusOK, gin.H{
+		"status": "alive",
+		"timestamp": time.Now(),
+		"uptime": time.Since(startTime).String(),
+	})
+}
+
+// SystemStatus 系统状态详情
+func (h *HealthHandler) SystemStatus(c *gin.Context) {
+	ctx := context.WithValue(c.Request.Context(), "request_id", c.GetString("request_id"))
+	
+	health := h.healthMonitor.CheckHealth(ctx)
+	lastResults := h.healthMonitor.GetLastResults()
+	
+	response := gin.H{
+		"system_health": health,
+		"last_check_results": lastResults,
+		"startup_time": startTime,
+	}
+	
+	c.JSON(http.StatusOK, response)
+}
+
 // HealthCheck 健康检查
 func (h *HealthHandler) HealthCheck(c *gin.Context) {
-	status := HealthStatus{
-		Status:    "healthy",
-		Timestamp: time.Now(),
-		Version:   "1.0.0", // 这个应该从构建时注入
-		Services:  make(map[string]string),
-		System:    h.getSystemInfo(),
-	}
-
-	// 检查 PostgreSQL
-	if err := h.checkPostgreSQL(); err != nil {
-		status.Services["postgresql"] = "unhealthy"
-		status.Status = "degraded"
-	} else {
-		status.Services["postgresql"] = "healthy"
-	}
-
-	// 检查 Redis
-	if err := h.checkRedis(); err != nil {
-		status.Services["redis"] = "unhealthy"
-		status.Status = "degraded"
-	} else {
-		status.Services["redis"] = "healthy"
-	}
-
-	// 检查 Python AI 服务
-	if err := h.checkPythonAI(); err != nil {
-		status.Services["python_ai"] = "unhealthy"
-		status.Status = "degraded"
-	} else {
-		status.Services["python_ai"] = "healthy"
-	}
-
-	// 根据整体状态返回相应的HTTP状态码
+	ctx := context.WithValue(c.Request.Context(), "request_id", c.GetString("request_id"))
+	
+	// 使用新的健康监控器
+	health := h.healthMonitor.CheckHealth(ctx)
+	
+	// 根据健康状态返回相应的HTTP状态码
 	httpStatus := http.StatusOK
-	if status.Status == "degraded" {
+	switch health.Status {
+	case monitoring.StatusCritical:
 		httpStatus = http.StatusServiceUnavailable
+	case monitoring.StatusWarning:
+		httpStatus = http.StatusOK // 警告状态仍然返回200
 	}
-
-	c.JSON(httpStatus, status)
+	
+	c.JSON(httpStatus, health)
 }
 
 // Metrics 系统指标

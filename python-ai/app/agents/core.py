@@ -13,6 +13,7 @@ from enum import Enum
 
 from app.core.logging import LoggerMixin
 from app.core.exceptions import AgentException
+from app.core.performance import monitor_performance, cache_result, performance_monitor
 from app.adapters.base import BaseAIAdapter
 from app.services.tool_service import ToolService
 from app.services.rag_service import RAGService
@@ -113,6 +114,10 @@ class IntelligentAgent(LoggerMixin):
             "error_count": 0
         }
         
+        # 性能优化：缓存配置
+        self.context_cache_enabled = True
+        self.response_cache_enabled = True
+        
         # 模式选择配置
         self.mode_selection_config = {
             "keywords": {
@@ -125,6 +130,7 @@ class IntelligentAgent(LoggerMixin):
             }
         }
     
+    @monitor_performance("agent_request_processing")
     async def process_request(self, request: AgentRequest) -> AgentResponse:
         """处理智能体请求"""
         
@@ -153,6 +159,10 @@ class IntelligentAgent(LoggerMixin):
             
             # 更新平均响应时间
             self._update_average_response_time(response.processing_time)
+            
+            # 记录性能指标
+            performance_monitor.record_time("total_request_time", response.processing_time)
+            performance_monitor.increment_counter("successful_requests")
             
             return response
             
@@ -210,6 +220,7 @@ class IntelligentAgent(LoggerMixin):
         # 默认模式：对话
         return AgentMode.CHAT
     
+    @monitor_performance("context_preparation")
     async def _prepare_context(self, request: AgentRequest) -> Dict[str, Any]:
         """准备上下文信息"""
         
@@ -276,6 +287,8 @@ class IntelligentAgent(LoggerMixin):
         else:
             return await self._process_chat_mode(request, context)
     
+    @monitor_performance("chat_mode_processing")
+    @cache_result(ttl=300)  # 缓存5分钟
     async def _process_chat_mode(
         self,
         request: AgentRequest,
@@ -316,6 +329,7 @@ class IntelligentAgent(LoggerMixin):
                 mode_used=AgentMode.CHAT
             )
     
+    @monitor_performance("rag_mode_processing")
     async def _process_rag_mode(
         self,
         request: AgentRequest,
@@ -361,6 +375,7 @@ class IntelligentAgent(LoggerMixin):
             rag_results=rag_results.get("documents", [])
         )
     
+    @monitor_performance("reasoning_mode_processing")
     async def _process_reasoning_mode(
         self,
         request: AgentRequest,
@@ -688,4 +703,58 @@ class IntelligentAgent(LoggerMixin):
             del self.active_sessions[session_id]
         
         self.logger.info(f"Cleaned up {len(inactive_sessions)} inactive sessions")
+        performance_monitor.increment_counter("sessions_cleaned", len(inactive_sessions))
         return len(inactive_sessions)
+    
+    async def get_performance_metrics(self) -> Dict[str, Any]:
+        """获取性能指标"""
+        
+        # 获取基础性能统计
+        perf_stats = performance_monitor.get_stats()
+        
+        # 添加Agent特定指标
+        agent_metrics = {
+            "agent_stats": self.performance_stats,
+            "active_sessions": len(self.active_sessions),
+            "memory_usage": {},
+            "reasoning_metrics": {}
+        }
+        
+        # 内存系统指标
+        if self.memory_system:
+            agent_metrics["memory_usage"] = self.memory_system.get_memory_statistics()
+        
+        # 推理引擎指标
+        if hasattr(self.reasoning_engine, 'get_performance_stats'):
+            agent_metrics["reasoning_metrics"] = self.reasoning_engine.get_performance_stats()
+        
+        return {
+            "performance": perf_stats,
+            "agent_metrics": agent_metrics,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    async def optimize_performance(self):
+        """性能优化操作"""
+        
+        # 清理过期缓存
+        if hasattr(self, '_context_cache'):
+            self._context_cache.cleanup_expired()
+        
+        # 清理不活跃会话
+        cleaned_sessions = await self.cleanup_inactive_sessions()
+        
+        # 优化内存系统
+        if self.memory_system and hasattr(self.memory_system, 'optimize'):
+            await self.memory_system.optimize()
+        
+        # 优化推理引擎
+        if hasattr(self.reasoning_engine, 'optimize'):
+            await self.reasoning_engine.optimize()
+        
+        self.logger.info(f"Performance optimization completed. Cleaned {cleaned_sessions} sessions.")
+        
+        return {
+            "sessions_cleaned": cleaned_sessions,
+            "timestamp": datetime.now().isoformat()
+        }
