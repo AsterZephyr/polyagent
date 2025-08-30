@@ -3,8 +3,8 @@ module github.com/polyagent/eino-polyagent
 go 1.21
 
 require (
-	github.com/cloudwego/eino v0.0.15
-	github.com/cloudwego/eino-ext v0.0.15
+	github.com/cloudwego/eino v0.0.14
+	github.com/cloudwego/eino-ext v0.0.14
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-jwt/jwt/v5 v5.0.0

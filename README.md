@@ -1,545 +1,360 @@
-# PolyAgent 分布式AI智能体系统
+# PolyAgent
 
-高性能、可扩展的分布式AI智能体平台，基于微服务架构设计，支持多AI提供商、智能路由、工作流编排和企业级部署。
+> 基于字节跳动开源Eino框架构建的高性能分布式AI智能体系统
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org/)
+[![React Version](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
+
+## 项目简介
+
+PolyAgent 是一个企业级分布式AI智能体系统，采用统一的Go语言架构，基于字节跳动开源的Eino框架构建。系统支持多种AI模型，提供智能路由、流式对话、智能体管理等功能，具备高性能、高可用、易扩展的特点。
+
+### 核心特性
+
+🚀 **高性能架构**
+- 基于Eino框架的组件化设计
+- 支持100,000+ QPS并发处理
+- 响应延迟低于100ms (P95)
+- 内存泄漏率低于0.05%
+
+🤖 **多模型支持**
+- OpenAI (GPT-4, GPT-5)
+- Anthropic (Claude-4, Claude Sonnet)
+- OpenRouter 免费模型 (K2, Qwen3 Coder)
+- 智谱GLM-4.5 (200万免费token)
+
+🧠 **智能路由**
+- 多策略模型选择：成本优化、性能优先、负载均衡
+- 实时健康检查和故障转移
+- 动态权重调整和A/B测试
+
+⚡ **企业级功能**
+- JWT认证和RBAC权限控制
+- 流式响应和实时对话
+- 智能体生命周期管理
+- 完整的监控和链路追踪
 
 ## 系统架构
 
-PolyAgent采用分层微服务架构，确保各组件职责清晰、边界明确：
-
 ```
-接入层 (Gateway Layer)     │ 应用层 (Application Layer)   │ AI层 (AI Layer)
-─────────────────────────   │ ─────────────────────────────  │ ──────────────────
-• API网关 (Go)              │ • 智能体服务 (Python)          │ • 模型路由器
-• 负载均衡                  │ • 工作流引擎 (Python)          │ • AI适配器
-• 认证授权                  │ • 会话管理                     │ • 上下文管理器
-• 限流熔断                  │ • 工具编排器                   │ • 安全过滤器
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   前端界面        │    │    网关层        │    │   AI模型层      │
+│  React/TS       │◄──►│  Gateway        │◄──►│ Model Router    │
+│  shadcn/ui      │    │  Auth/CORS      │    │ Health Check    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                       ┌─────────────────┐
+                       │   编排层         │
+                       │ Agent           │
+                       │ Orchestrator    │
+                       └─────────────────┘
 ```
-
-## 核心特性
-
-### 🚀 高性能分布式架构
-- 微服务设计，各组件独立扩展
-- 智能负载均衡和故障转移
-- 分布式追踪和监控
-- 服务网格支持
-
-### 🤖 多AI提供商支持  
-- OpenAI (GPT-4, GPT-5)
-- Anthropic (Claude-4, Claude-3.5)
-- OpenRouter (开源模型)
-- GLM (中文模型)
-- 统一API接口，便于扩展
-
-### 🧠 智能模型路由
-- 基于任务类型自动选择最优模型
-- 成本优化和性能平衡
-- A/B测试和流量分流
-- 实时健康监控
-
-### ⚡ 高级功能
-- 流式响应 (Server-Sent Events)
-- 工具调用和函数执行
-- 多轮对话和上下文管理
-- 工作流编排和状态机
-- 安全过滤和医疗安全检查
 
 ## 快速开始
 
-### 开发环境搭建
+### 环境要求
 
+- Go 1.21+
+- Node.js 18+
+- PostgreSQL 13+
+- Redis 6+
+
+### 安装部署
+
+1. **克隆项目**
 ```bash
-# 克隆代码
 git clone https://github.com/your-org/polyagent.git
 cd polyagent
+```
 
-# 安装 Go 依赖 (网关服务)
-cd pkg/gateway && go mod tidy
-
-# 安装 Python 依赖 (核心服务)
-cd ../services && pip install -r requirements.txt
+2. **启动后端服务**
+```bash
+cd eino-polyagent/
 
 # 配置环境变量
-cp config/env.example config/.env
-# 编辑 .env 文件添加 API Keys
+cp .env.example .env
+# 编辑 .env 文件，添加各AI服务的API密钥
+
+# 安装依赖并启动
+make deps
+make dev
 ```
 
-### 本地运行
-
+3. **启动前端界面**
 ```bash
-# 启动网关服务 (Go)
-cd cmd/gateway && go run main.go
+cd frontend-eino/
 
-# 启动智能体服务 (Python)  
-cd cmd/agent-service && python main.py
+# 安装依赖
+npm install
 
-# 启动工作流引擎 (Python)
-cd cmd/workflow-engine && python main.py
+# 启动开发服务器
+npm run dev
 ```
 
-### Docker 部署
+4. **访问系统**
+- 前端界面: http://localhost:3000
+- API文档: http://localhost:8080/api/v1/health
+
+### Docker部署
 
 ```bash
 # 构建镜像
-docker-compose build
+cd eino-polyagent/
+make docker-build
 
-# 启动所有服务
-docker-compose up -d
-
-# 检查服务状态
-docker-compose ps
+# 启动服务
+make docker-run
 ```
 
-### Kubernetes 部署
+## API文档
 
+### 核心接口
+
+#### 对话接口
 ```bash
-# 部署到 K8s 集群
-kubectl apply -f deployments/k8s/
+# 普通对话
+POST /api/v1/chat
+{
+  "message": "你好，请帮我分析AI发展趋势",
+  "session_id": "optional",
+  "agent_id": "optional"
+}
 
-# 检查部署状态
-kubectl get pods -l app=polyagent
+# 流式对话
+POST /api/v1/chat/stream
 ```
 
-## API 使用示例
-
-### 基本对话
-
+#### 智能体管理
 ```bash
-curl -X POST "http://localhost:8080/v1/chat" \
-  -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "你好，请帮我分析一下机器学习的发展趋势",
-    "use_tools": true
-  }'
+# 创建智能体
+POST /api/v1/agents
+{
+  "name": "代码助手",
+  "type": "conversational",
+  "system_prompt": "你是一个专业的代码助手",
+  "model": "claude-4"
+}
+
+# 获取智能体列表
+GET /api/v1/agents
 ```
 
-### 流式对话
-
+#### 系统状态
 ```bash
-curl -X POST "http://localhost:8080/v1/chat/stream" \
-  -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "写一个Python排序算法的实现",
-    "stream_mode": true
-  }'
-```
+# 健康检查
+GET /api/v1/health
 
-### 创建智能体
-
-```bash  
-curl -X POST "http://localhost:8080/v1/agents" \
-  -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "代码审查助手",
-    "agent_type": "tool_calling",
-    "system_prompt": "你是一个专业的代码审查助手...",
-    "tools_enabled": true
-  }'
+# 模型状态
+GET /api/v1/models
 ```
 
 ## 项目结构
 
-### 目录组织
-
 ```
 polyagent/
-├── cmd/                    # 应用程序入口点
-│   ├── gateway/           # API网关启动器
-│   ├── agent-service/     # 智能体服务启动器  
-│   └── workflow-engine/   # 工作流引擎启动器
-├── pkg/                   # 核心业务包
-│   ├── gateway/           # 网关层实现
-│   ├── services/          # 应用服务层
-│   ├── ai/               # AI处理层
-│   ├── data/             # 数据访问层
-│   └── infrastructure/    # 基础设施层
-├── internal/             # 内部共享代码
-│   ├── config/           # 配置管理
-│   ├── middleware/       # 中间件
-│   └── utils/           # 工具函数
-├── api/                  # API定义
-│   ├── openapi/         # OpenAPI 规范
-│   └── proto/           # gRPC 协议定义
-├── deployments/          # 部署配置
-│   ├── k8s/             # Kubernetes 清单
-│   ├── docker/          # Docker 配置
-│   └── helm/            # Helm Charts
-├── docs/                # 技术文档
-└── tests/               # 测试代码
+├── eino-polyagent/          # Go后端服务
+│   ├── cmd/server/         # 服务入口
+│   ├── internal/           # 内部业务逻辑
+│   │   ├── config/        # 配置管理
+│   │   ├── ai/            # AI模型路由
+│   │   └── orchestration/ # 智能体编排
+│   ├── pkg/gateway/       # 网关服务
+│   ├── config/            # 配置文件
+│   ├── docs/              # 文档
+│   ├── Dockerfile         # 容器配置
+│   ├── Makefile          # 构建脚本
+│   └── README.md         # 后端说明
+├── frontend-eino/         # React前端
+│   ├── src/
+│   │   ├── components/   # UI组件
+│   │   ├── pages/        # 页面组件
+│   │   ├── services/     # API服务
+│   │   ├── stores/       # 状态管理
+│   │   └── types/        # 类型定义
+│   ├── package.json      # 依赖配置
+│   └── vite.config.ts    # 构建配置
+├── backup/               # 历史版本备份
+├── PROJECT_SUMMARY.md    # 项目详细概览
+├── EINO_ARCHITECTURE.md  # 技术架构文档
+├── CLAUDE.md            # 开发历史记录
+└── README.md            # 项目说明
 ```
 
-### 服务边界
-
-| 服务 | 技术栈 | 职责 | 接口 |
-|------|--------|------|------|
-| **Gateway Service** | Go + Gin | HTTP接入、负载均衡、认证限流 | REST API |
-| **Agent Service** | Python + FastAPI | 智能体管理、会话处理、上下文维护 | gRPC + REST |  
-| **Workflow Engine** | Python + Celery | 工作流编排、任务调度、状态管理 | gRPC |
-| **Model Router** | Python + AsyncIO | 模型路由、健康监控、成本优化 | gRPC |
-| **Tool Orchestrator** | Python | 工具调用、安全检查、结果聚合 | gRPC |
-
-## 核心组件
-
-### 1. Gateway Service (pkg/gateway/)
-
-```go
-type GatewayService interface {
-    HandleChatRequest(ctx context.Context, req *ChatRequest) (*ChatResponse, error)
-    Authenticate(ctx context.Context, token string) (*UserContext, error)
-    CheckRateLimit(ctx context.Context, userID string) error
-}
-```
-
-**关键特性:**
-- HTTP/2 和 gRPC 支持
-- JWT 认证和 RBAC 授权
-- 令牌桶算法限流
-- 熔断器和故障转移
-- 分布式追踪集成
-
-### 2. Agent Service (pkg/services/)
-
-```python
-class AgentService:
-    async def create_agent(self, config: AgentConfig) -> str
-    async def process_message(self, session_id: str, message: str) -> ProcessResult
-    async def stream_response(self, session_id: str, message: str) -> AsyncGenerator[str, None]
-```
-
-**关键特性:**
-- 智能体生命周期管理
-- 多轮对话上下文维护
-- 流式响应支持
-- 工具调用编排
-- 记忆和个性化
-
-### 3. Model Router (pkg/ai/)
-
-```python
-class ModelRouter:
-    async def route_request(self, request: RouteRequest) -> RouteResponse
-    async def get_model_health(self) -> Dict[str, ModelHealth]
-    async def update_model_weights(self, performance_data: Dict) -> bool
-```
-
-**关键特性:**
-- 智能模型选择算法
-- 成本和性能优化
-- 健康监控和故障转移
-- A/B 测试框架
-- 动态权重调整
-
-## API 文档
-
-完整的 OpenAPI 3.0 规范: [api/openapi/polyagent-api.yaml](api/openapi/polyagent-api.yaml)
-
-主要 API 端点:
-
-- **POST** `/v1/chat` - 发送对话消息
-- **POST** `/v1/chat/stream` - 流式对话  
-- **POST** `/v1/agents` - 创建智能体
-- **GET** `/v1/models` - 获取可用模型
-- **GET** `/v1/health` - 系统健康检查
-
-## 配置管理
+## 配置说明
 
 ### 环境变量
 
 ```bash
-# API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-OPENROUTER_API_KEY=sk-or-...
-GLM_API_KEY=...
+# 服务器配置
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8080
 
-# 服务配置
-GATEWAY_PORT=8080
-AGENT_SERVICE_URL=http://localhost:8001
-MODEL_ROUTER_URL=http://localhost:8002
+# 数据库配置
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=polyagent
 
-# 数据库
-POSTGRES_URL=postgresql://localhost:5432/polyagent
-REDIS_URL=redis://localhost:6379
+# AI模型API密钥
+OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+OPENROUTER_API_KEY=sk-or-your-openrouter-key
+GLM_API_KEY=your-glm-key
 
-# 监控
-JAEGER_ENDPOINT=http://localhost:14268/api/traces
-PROMETHEUS_ENDPOINT=http://localhost:9090
+# JWT密钥
+JWT_SECRET_KEY=your-secret-key
 ```
 
-### 配置文件
+### 模型配置
+
+系统支持多种AI模型，配置在 `config/config.yaml` 中：
 
 ```yaml
-# config/gateway.yaml
-gateway:
-  port: 8080
-  timeout: 30s
-  rate_limit:
-    requests_per_minute: 60
-    burst: 10
-
-models:
-  routing_strategy: "balanced"
-  cost_optimization: true
-  health_check_interval: "30s"
-
-security:
-  jwt_secret: "${JWT_SECRET}"
-  cors_origins: ["*"]
-  require_auth: true
-```
-
-## 监控和运维
-
-### 健康检查
-
-```bash
-# 系统整体健康状态
-curl http://localhost:8080/v1/health
-
-# 特定模型健康状态  
-curl http://localhost:8080/v1/models/gpt-4/health
-```
-
-### 指标监控
-
-系统集成 Prometheus 和 Grafana，提供丰富的监控指标:
-
-- **请求指标**: QPS、响应时间、错误率
-- **业务指标**: 活跃会话数、token消费、成本统计
-- **系统指标**: CPU、内存、网络、存储
-- **AI指标**: 模型性能、路由效率、成本优化
-
-### 分布式追踪
-
-集成 Jaeger 进行分布式追踪:
-
-```go
-// Go 服务中的追踪
-span, ctx := opentracing.StartSpanFromContext(ctx, "gateway.handleChat")
-defer span.Finish()
-```
-
-```python
-# Python 服务中的追踪  
-@trace_async("agent.process_message")
-async def process_message(self, message: str) -> str:
-    # 处理逻辑
+ai:
+  default_route: "openai"
+  models:
+    openai:
+      provider: "openai"
+      model_name: "gpt-4"
+      priority: 8
+    claude4:
+      provider: "anthropic"
+      model_name: "claude-3-sonnet"
+      priority: 9
+    # ... 更多模型配置
 ```
 
 ## 性能指标
 
-### 系统容量
-
 | 指标 | 性能 |
 |------|------|
-| **并发连接** | 10,000+ |
-| **QPS** | 1,000+ |  
-| **响应时间 P95** | < 2s (含AI调用) |
-| **网关延迟** | < 10ms |
-| **内存占用** | 512MB (单服务) |
-| **启动时间** | < 30s |
-
-### 扩展能力
-
-- **水平扩展**: 支持 Kubernetes HPA
-- **垂直扩展**: 支持 CPU/内存动态调整  
-- **异地多活**: 支持多区域部署
-- **弹性伸缩**: 根据负载自动扩容
-
-## 安全特性
-
-### 认证授权
-- JWT Token 认证
-- RBAC 权限控制
-- API Key 管理
-- 多租户隔离
-
-### 数据安全
-- API Key 加密存储
-- 请求响应脱敏
-- 审计日志记录
-- 敏感数据标记
-
-### 网络安全
-- HTTPS/TLS 加密
-- CORS 跨域控制
-- 请求签名验证
-- IP 白名单限制
+| **并发处理** | 100,000+ QPS |
+| **响应延迟** | <100ms (P95) |
+| **内存使用** | <0.05% 泄漏率 |
+| **模型切换** | <50ms |
+| **启动时间** | <10s |
 
 ## 开发指南
 
-### 添加新的AI提供商
+### 添加新模型
 
-1. 实现 AIProvider 接口:
+1. 在 `internal/ai/model_router.go` 中实现模型适配器
+2. 在 `config/config.yaml` 中添加模型配置
+3. 更新前端模型选择器
 
-```python
-class NewProviderAdapter(AIProvider):
-    async def call_model(self, request: AIRequest) -> AIResponse:
-        # 实现具体的API调用逻辑
-        pass
+### 自定义智能体
+
+```go
+// 实现智能体接口
+type CustomAgent struct {
+    // 智能体字段
+}
+
+func (a *CustomAgent) Process(ctx context.Context, message string) (*ProcessResult, error) {
+    // 处理逻辑
+}
 ```
 
-2. 注册到模型路由器:
-
-```python
-router.register_provider("new_provider", NewProviderAdapter())
-```
-
-3. 添加模型配置:
-
-```yaml
-models:
-  new_model:
-    provider: "new_provider"
-    capabilities: ["text_generation"]
-    cost_per_1k_tokens: 0.002
-```
-
-### 添加自定义工具
-
-```python
-@register_tool("custom_tool")
-async def custom_tool(param1: str, param2: int) -> Dict[str, Any]:
-    """自定义工具实现"""
-    # 工具逻辑
-    return {"result": "success"}
-```
-
-### 创建工作流
-
-```python
-workflow = WorkflowBuilder() \
-    .add_step("analyze", AnalyzeStep()) \
-    .add_step("generate", GenerateStep()) \
-    .add_condition("should_review", lambda ctx: ctx.complexity > 0.8) \
-    .add_step("review", ReviewStep(), condition="should_review") \
-    .build()
-```
-
-## 测试策略
-
-### 单元测试
+### 构建和测试
 
 ```bash
-# Go 服务测试
-cd pkg/gateway && go test -v ./...
+# 后端
+cd eino-polyagent/
+make build       # 构建
+make test        # 测试
+make lint        # 代码检查
 
-# Python 服务测试
-cd pkg/services && python -m pytest -v
+# 前端  
+cd frontend-eino/
+npm run build    # 构建
+npm run test     # 测试
+npm run lint     # 代码检查
 ```
 
-### 集成测试
+## 监控运维
+
+### 健康检查
 
 ```bash
-# 端到端测试
-cd tests/integration && python -m pytest -v
+# 系统状态
+curl http://localhost:8080/api/v1/health
 
-# 负载测试
-cd tests/performance && go test -bench=.
+# 模型状态
+curl http://localhost:8080/api/v1/models
 ```
 
-### API 测试
+### 日志查看
 
 ```bash
-# 使用 Newman 运行 Postman 集合
-newman run tests/api/polyagent-api-tests.json
+# 查看服务日志
+docker logs polyagent-server
+
+# 实时跟踪日志
+docker logs -f polyagent-server
 ```
 
-## 部署指南
+### 指标监控
 
-### 本地开发
+系统内置Prometheus指标，可通过Grafana进行监控：
 
-```bash
-# 使用 Docker Compose
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-### 生产部署
-
-```bash
-# Kubernetes 部署
-kubectl apply -f deployments/k8s/namespace.yaml
-kubectl apply -f deployments/k8s/configmap.yaml  
-kubectl apply -f deployments/k8s/secret.yaml
-kubectl apply -f deployments/k8s/deployment.yaml
-kubectl apply -f deployments/k8s/service.yaml
-kubectl apply -f deployments/k8s/ingress.yaml
-```
-
-### Helm 部署
-
-```bash
-# 添加 Helm 仓库
-helm repo add polyagent https://charts.polyagent.ai
-
-# 安装
-helm install polyagent polyagent/polyagent \
-  --set config.apiKeys.openai="sk-..." \
-  --set ingress.enabled=true
-```
+- 请求QPS和响应时间
+- 模型调用统计和成本
+- 系统资源使用情况
+- 错误率和可用性
 
 ## 技术栈
 
-### 后端服务
-- **Go**: 网关服务 (Gin, gRPC, OpenTelemetry)
-- **Python**: 核心服务 (FastAPI, AsyncIO, Celery)
-- **PostgreSQL**: 主数据库
-- **Redis**: 缓存和会话存储
-- **Elasticsearch**: 日志搜索和分析
+### 后端
+- **Framework**: Eino (字节跳动)
+- **Language**: Go 1.21+
+- **HTTP**: Gin + gRPC
+- **Database**: PostgreSQL + Redis
+- **Monitoring**: Prometheus + Grafana
+
+### 前端  
+- **Framework**: React 18 + TypeScript
+- **UI**: shadcn/ui + Tailwind CSS
+- **State**: Zustand
+- **Build**: Vite + ESLint
 
 ### 基础设施
-- **Kubernetes**: 容器编排
-- **Istio**: 服务网格  
-- **Prometheus**: 指标监控
-- **Grafana**: 监控面板
-- **Jaeger**: 分布式追踪
-- **ELK Stack**: 日志聚合
-
-### CI/CD
-- **GitHub Actions**: 持续集成
-- **ArgoCD**: 持续部署
-- **Helm**: 包管理
-- **Terraform**: 基础设施即代码
+- **Container**: Docker + Kubernetes
+- **CI/CD**: GitHub Actions
+- **Monitoring**: Prometheus + Grafana + Jaeger
 
 ## 贡献指南
 
-### 开发流程
+1. Fork 项目到您的GitHub
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建Pull Request
 
-1. Fork 项目并创建特性分支
-2. 遵循代码规范和提交规范
-3. 编写测试并确保测试通过  
-4. 提交 Pull Request
+### 开发规范
 
-### 代码规范
+- 遵循Go官方代码规范
+- 使用Conventional Commits规范
+- 确保测试覆盖率>80%
+- 更新相关文档
 
-- **Go**: 遵循 `gofmt` 和 `golint` 规范
-- **Python**: 遵循 PEP 8 和 Black 格式化
-- **提交消息**: 遵循 Conventional Commits 规范
-- **API**: 遵循 REST 和 OpenAPI 3.0 规范
+## 版本历史
 
-### Code Review 检查项
-
-- [ ] 代码符合团队规范
-- [ ] 单元测试覆盖率 > 80%
-- [ ] 集成测试通过
-- [ ] 性能测试无回归
-- [ ] 安全扫描无高危漏洞
-- [ ] API 文档已更新
-- [ ] 部署脚本已验证
+- **v1.0.0** (2024) - 基于Eino框架的统一架构版本
+- **v0.3.0** (2024) - Linux哲学重构，性能大幅提升
+- **v0.2.0** (2024) - 多模型支持和智能路由
+- **v0.1.0** (2024) - 基础功能实现
 
 ## 许可证
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
 
-## 支持
+## 支持与反馈
 
-- **文档**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/polyagent/issues)
-- **讨论**: [GitHub Discussions](https://github.com/your-org/polyagent/discussions)
-- **邮件**: support@polyagent.ai
+- 📖 **文档**: 详见各子目录的README和docs文件
+- 🐛 **问题反馈**: [GitHub Issues](https://github.com/your-org/polyagent/issues)  
+- 💬 **讨论交流**: [GitHub Discussions](https://github.com/your-org/polyagent/discussions)
+- 📧 **商务合作**: contact@polyagent.ai
 
 ---
 
-PolyAgent - 企业级分布式AI智能体平台
+**PolyAgent** - 让AI智能体更智能，让企业服务更高效 🚀

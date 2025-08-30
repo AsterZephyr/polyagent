@@ -1,0 +1,111 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: "30s"
+  write_timeout: "30s"
+  idle_timeout: "120s"
+
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: 5432
+  user: "polyagent"
+  password: "polyagent123"
+  dbname: "polyagent"
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: "5m"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  max_retries: 3
+  pool_size: 10
+  min_idle_conns: 5
+
+ai:
+  default_route: "openai"
+  timeout: "60s"
+  models:
+    openai:
+      provider: "openai"
+      model_name: "gpt-4"
+      api_key: "${OPENAI_API_KEY}"
+      base_url: "https://api.openai.com/v1"
+      max_tokens: 4000
+      temperature: 0.7
+      priority: 8
+      cost_per_1k:
+        input: 0.03
+        output: 0.06
+    claude4:
+      provider: "anthropic"
+      model_name: "claude-3-sonnet-20240229"
+      api_key: "${ANTHROPIC_API_KEY}"
+      base_url: "https://api.anthropic.com"
+      max_tokens: 4000
+      temperature: 0.7
+      priority: 9
+      cost_per_1k:
+        input: 0.015
+        output: 0.075
+    openrouter_k2:
+      provider: "openai"
+      model_name: "meta-llama/llama-3.2-3b-instruct:free"
+      api_key: "${OPENROUTER_API_KEY}"
+      base_url: "https://openrouter.ai/api/v1"
+      max_tokens: 2000
+      temperature: 0.7
+      priority: 6
+      cost_per_1k:
+        input: 0.0
+        output: 0.0
+    openrouter_qwen3:
+      provider: "openai"
+      model_name: "qwen/qwen-2.5-coder-32b-instruct:free"
+      api_key: "${OPENROUTER_API_KEY}"
+      base_url: "https://openrouter.ai/api/v1"
+      max_tokens: 2000
+      temperature: 0.7
+      priority: 7
+      cost_per_1k:
+        input: 0.0
+        output: 0.0
+    glm4_5:
+      provider: "openai"
+      model_name: "glm-4-plus"
+      api_key: "${GLM_API_KEY}"
+      base_url: "https://open.bigmodel.cn/api/paas/v4"
+      max_tokens: 8000
+      temperature: 0.7
+      priority: 8
+      cost_per_1k:
+        input: 0.001
+        output: 0.001
+
+security:
+  jwt:
+    secret_key: "${JWT_SECRET_KEY}"
+    expires_in: "24h"
+    issuer: "polyagent"
+  cors:
+    allow_origins: ["http://localhost:3000", "https://polyagent.ai"]
+    allow_credentials: true
+  rate_limit:
+    enabled: true
+    requests_per_min: 100
+    burst_size: 10
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+  namespace: "polyagent"
+
+environment: "development"
