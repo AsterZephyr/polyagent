@@ -1,0 +1,947 @@
+openapi: 3.0.3
+info:
+  title: PolyAgent API
+  description: |
+    PolyAgent 分布式AI智能体系统 REST API
+    
+    ## 功能特性
+    - 多AI提供商支持 (OpenAI, Anthropic, OpenRouter, GLM)
+    - 智能模型路由和负载均衡
+    - 会话管理和上下文维护
+    - 工具调用和工作流编排
+    - 实时流式响应
+    - 分布式追踪和监控
+    
+  version: 1.0.0
+  contact:
+    name: PolyAgent Team
+    url: https://github.com/polyagent/polyagent
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.polyagent.ai/v1
+    description: 生产环境
+  - url: https://staging-api.polyagent.ai/v1
+    description: 测试环境  
+  - url: http://localhost:8080/v1
+    description: 本地开发环境
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # =============================================================================
+  # 对话相关接口
+  # =============================================================================
+  
+  /chat:
+    post:
+      tags: [Chat]
+      summary: 发送对话消息
+      description: |
+        向AI智能体发送消息并获取响应。
+        支持多轮对话、工具调用、流式响应等功能。
+      operationId: sendChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              simple_chat:
+                summary: 简单对话
+                value:
+                  message: "Hello, how are you?"
+                  use_tools: false
+              tool_calling:
+                summary: 工具调用
+                value:
+                  message: "What's the current time?"
+                  use_tools: true
+              with_context:
+                summary: 带上下文
+                value:
+                  message: "Continue our discussion about AI"
+                  session_id: "session_123"
+                  context: "We were talking about machine learning"
+      responses:
+        '200':
+          description: 对话响应成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'  
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  
+  /chat/stream:
+    post:
+      tags: [Chat]
+      summary: 流式对话
+      description: |
+        发送消息并获取流式响应。
+        使用Server-Sent Events (SSE) 协议。
+      operationId: streamChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: 流式响应
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  data: {"type": "start", "session_id": "session_123"}
+                  
+                  data: {"type": "chunk", "content": "Hello"}
+                  
+                  data: {"type": "chunk", "content": " there!"}
+                  
+                  data: {"type": "end", "usage": {"total_tokens": 15}}
+
+  # =============================================================================
+  # 智能体管理接口
+  # =============================================================================
+  
+  /agents:
+    get:
+      tags: [Agents]
+      summary: 获取智能体列表
+      description: 获取当前用户可访问的智能体列表
+      operationId: listAgents
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: 智能体列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgentInfo'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+    
+    post:
+      tags: [Agents]
+      summary: 创建智能体
+      description: 创建新的AI智能体
+      operationId: createAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: 智能体创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentInfo'
+  
+  /agents/{agent_id}:
+    get:
+      tags: [Agents]
+      summary: 获取智能体详情
+      operationId: getAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '200':
+          description: 智能体详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentInfo'
+    
+    put:
+      tags: [Agents]
+      summary: 更新智能体
+      operationId: updateAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentInfo'
+    
+    delete:
+      tags: [Agents]
+      summary: 删除智能体
+      operationId: deleteAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '204':
+          description: 删除成功
+
+  # =============================================================================
+  # 会话管理接口
+  # =============================================================================
+  
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: 创建会话
+      description: 为指定智能体创建新的对话会话
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id:
+                  type: string
+                  description: 智能体ID
+                context:
+                  type: object
+                  description: 初始上下文
+                metadata:
+                  type: object
+                  description: 会话元数据
+      responses:
+        '201':
+          description: 会话创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+  
+  /sessions/{session_id}:
+    get:
+      tags: [Sessions]
+      summary: 获取会话信息
+      operationId: getSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: 会话信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+    
+    delete:
+      tags: [Sessions]  
+      summary: 删除会话
+      operationId: deleteSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '204':
+          description: 删除成功
+  
+  /sessions/{session_id}/history:
+    get:
+      tags: [Sessions]
+      summary: 获取会话历史
+      operationId: getSessionHistory
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - name: before
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 获取指定时间之前的消息
+      responses:
+        '200':
+          description: 会话历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  # =============================================================================
+  # 模型管理接口  
+  # =============================================================================
+  
+  /models:
+    get:
+      tags: [Models]
+      summary: 获取可用模型列表
+      description: 获取当前可用的AI模型列表及其状态
+      operationId: listModels
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            enum: [openai, anthropic, openrouter, glm]
+          description: 过滤特定提供商的模型
+        - name: capability
+          in: query
+          schema:
+            type: string
+            enum: [text_generation, code_generation, reasoning, multimodal, function_calling]
+          description: 过滤具备特定能力的模型
+      responses:
+        '200':
+          description: 模型列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelInfo'
+                  total:
+                    type: integer
+  
+  /models/{model_id}/health:
+    get:
+      tags: [Models]
+      summary: 获取模型健康状态
+      operationId: getModelHealth
+      parameters:
+        - name: model_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 模型健康状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelHealth'
+
+  # =============================================================================
+  # 系统监控接口
+  # =============================================================================
+  
+  /health:
+    get:
+      tags: [System]
+      summary: 系统健康检查
+      description: 检查系统各组件健康状态
+      operationId: healthCheck
+      responses:
+        '200':
+          description: 系统健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: 系统不健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  
+  /metrics:
+    get:
+      tags: [System]
+      summary: 获取系统指标
+      description: 获取系统性能和使用指标 (需要管理员权限)
+      operationId: getMetrics
+      responses:
+        '200':
+          description: 系统指标
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetrics'
+
+# =============================================================================
+# 组件定义
+# =============================================================================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Token 认证
+    
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key 认证
+
+  parameters:
+    AgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 智能体唯一标识符
+    
+    SessionId:
+      name: session_id
+      in: path
+      required: true  
+      schema:
+        type: string
+      description: 会话唯一标识符
+
+  schemas:
+    # 对话相关
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: 用户消息内容
+          example: "Hello, how can you help me?"
+        session_id:
+          type: string
+          description: 会话ID (可选，用于多轮对话)
+        agent_id:
+          type: string
+          description: 指定智能体ID (可选)
+        context:
+          type: object
+          description: 额外上下文信息
+        use_tools:
+          type: boolean
+          default: true
+          description: 是否启用工具调用
+        stream_mode:
+          type: boolean
+          default: false
+          description: 是否启用流式响应
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 8000
+          description: 最大输出token数
+        temperature:
+          type: number
+          minimum: 0.0
+          maximum: 2.0
+          default: 0.7
+          description: 生成温度参数
+        model_preference:
+          type: string
+          description: 模型偏好 (可选)
+          enum: [cost_optimized, performance_optimized, balanced]
+    
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: AI响应内容
+        session_id:
+          type: string
+          description: 会话ID
+        model_used:
+          type: string
+          description: 实际使用的模型
+        usage:
+          $ref: '#/components/schemas/TokenUsage'
+        cost:
+          type: number
+          format: float
+          description: 请求成本 (USD)
+        tools_called:
+          type: array
+          items:
+            type: string
+          description: 调用的工具列表
+        processing_time_ms:
+          type: integer
+          description: 处理时间 (毫秒)
+        metadata:
+          type: object
+          description: 响应元数据
+    
+    TokenUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+          description: 输入token数
+        completion_tokens:
+          type: integer
+          description: 输出token数
+        total_tokens:
+          type: integer
+          description: 总token数
+
+    # 智能体相关
+    AgentInfo:
+      type: object
+      properties:
+        agent_id:
+          type: string
+          description: 智能体ID
+        name:
+          type: string
+          description: 智能体名称
+        description:
+          type: string
+          description: 智能体描述
+        agent_type:
+          type: string
+          enum: [conversational, task_oriented, workflow_based, tool_calling]
+          description: 智能体类型
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: 智能体能力列表
+        status:
+          type: string
+          enum: [active, paused, disabled]
+          description: 智能体状态
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新时间
+        metadata:
+          type: object
+          description: 智能体元数据
+    
+    CreateAgentRequest:
+      type: object
+      required: [name, agent_type, system_prompt]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 智能体名称
+        description:
+          type: string
+          maxLength: 500
+          description: 智能体描述
+        agent_type:
+          type: string
+          enum: [conversational, task_oriented, workflow_based, tool_calling]
+          description: 智能体类型
+        system_prompt:
+          type: string
+          minLength: 10
+          description: 系统提示词
+        tools_enabled:
+          type: boolean
+          default: true
+          description: 是否启用工具调用
+        memory_enabled:
+          type: boolean
+          default: true  
+          description: 是否启用记忆功能
+        safety_filters:
+          type: array
+          items:
+            type: string
+          description: 安全过滤器列表
+        custom_config:
+          type: object
+          description: 自定义配置
+    
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        system_prompt:
+          type: string
+          minLength: 10
+        tools_enabled:
+          type: boolean
+        memory_enabled:
+          type: boolean
+        safety_filters:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, paused, disabled]
+        custom_config:
+          type: object
+
+    # 会话相关
+    SessionInfo:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: 会话ID
+        agent_id:
+          type: string
+          description: 关联的智能体ID
+        user_id:
+          type: string
+          description: 用户ID
+        status:
+          type: string
+          enum: [active, paused, completed, expired]
+          description: 会话状态
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        last_activity_at:
+          type: string
+          format: date-time
+          description: 最后活动时间
+        message_count:
+          type: integer
+          description: 消息总数
+        context_length:
+          type: integer
+          description: 当前上下文长度
+        metadata:
+          type: object
+          description: 会话元数据
+    
+    Message:
+      type: object
+      properties:
+        message_id:
+          type: string
+          description: 消息ID
+        session_id:
+          type: string
+          description: 会话ID
+        role:
+          type: string
+          enum: [user, assistant, system, tool]
+          description: 消息角色
+        content:
+          type: string
+          description: 消息内容
+        timestamp:
+          type: string
+          format: date-time
+          description: 消息时间戳
+        tool_calls:
+          type: array
+          items:
+            type: object
+          description: 工具调用信息
+        metadata:
+          type: object
+          description: 消息元数据
+
+    # 模型相关
+    ModelInfo:
+      type: object
+      properties:
+        model_id:
+          type: string
+          description: 模型ID
+        name:
+          type: string
+          description: 模型名称
+        provider:
+          type: string
+          enum: [openai, anthropic, openrouter, glm]
+          description: 模型提供商
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: 模型能力列表
+        max_tokens:
+          type: integer
+          description: 最大token数
+        cost_per_1k_input_tokens:
+          type: number
+          format: float
+          description: 每1k输入token成本
+        cost_per_1k_output_tokens:
+          type: number
+          format: float
+          description: 每1k输出token成本
+        supports_streaming:
+          type: boolean
+          description: 是否支持流式响应
+        supports_function_calling:
+          type: boolean
+          description: 是否支持函数调用
+        supports_vision:
+          type: boolean
+          description: 是否支持视觉输入
+        status:
+          type: string
+          enum: [available, degraded, unavailable]
+          description: 模型状态
+    
+    ModelHealth:
+      type: object
+      properties:
+        model_id:
+          type: string
+          description: 模型ID
+        is_healthy:
+          type: boolean
+          description: 是否健康
+        response_time_avg_ms:
+          type: number
+          format: float
+          description: 平均响应时间
+        success_rate_percent:
+          type: number
+          format: float
+          description: 成功率百分比
+        error_rate_percent:
+          type: number
+          format: float
+          description: 错误率百分比
+        requests_per_minute:
+          type: integer
+          description: 每分钟请求数
+        last_check_timestamp:
+          type: string
+          format: date-time
+          description: 最后检查时间
+        status_message:
+          type: string
+          description: 状态描述
+
+    # 系统相关
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: 总体健康状态
+        version:
+          type: string
+          description: 系统版本
+        uptime_seconds:
+          type: integer
+          description: 运行时间（秒）
+        timestamp:
+          type: string
+          format: date-time
+          description: 检查时间戳
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [healthy, degraded, unhealthy]
+              response_time_ms:
+                type: number
+              error_message:
+                type: string
+          description: 各服务健康状态
+        database:
+          type: object
+          properties:
+            connected:
+              type: boolean
+            response_time_ms:
+              type: number
+          description: 数据库连接状态
+    
+    SystemMetrics:
+      type: object
+      properties:
+        requests_total:
+          type: integer
+          description: 总请求数
+        requests_per_minute:
+          type: number
+          description: 每分钟请求数
+        average_response_time_ms:
+          type: number
+          description: 平均响应时间
+        error_rate_percent:
+          type: number
+          description: 错误率百分比
+        active_sessions:
+          type: integer
+          description: 活跃会话数
+        total_tokens_processed:
+          type: integer
+          description: 处理的总token数
+        total_cost_usd:
+          type: number
+          format: float
+          description: 总成本
+        model_usage:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 各模型使用统计
+        timestamp:
+          type: string
+          format: date-time
+          description: 指标时间戳
+
+    # 错误响应
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: 错误码
+            message:
+              type: string
+              description: 错误信息
+            details:
+              type: string
+              description: 错误详情
+            timestamp:
+              type: string
+              format: date-time
+              description: 错误时间
+            request_id:
+              type: string
+              description: 请求ID
+          required: [code, message]
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "INVALID_REQUEST"
+              message: "The request parameters are invalid"
+              details: "Field 'message' is required"
+              timestamp: "2024-08-30T14:30:25Z"
+              request_id: "req_123456789"
+    
+    Unauthorized:
+      description: 未授权访问
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "UNAUTHORIZED"
+              message: "Authentication required"
+              timestamp: "2024-08-30T14:30:25Z"
+    
+    RateLimited:
+      description: 请求频率超限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "RATE_LIMITED"
+              message: "Too many requests. Please try again later"
+              timestamp: "2024-08-30T14:30:25Z"
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: 建议重试间隔（秒）
+    
+    InternalError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "An internal server error occurred"
+              timestamp: "2024-08-30T14:30:25Z"
+              request_id: "req_123456789"
+
+tags:
+  - name: Chat
+    description: 对话交互接口
+  - name: Agents
+    description: 智能体管理接口
+  - name: Sessions
+    description: 会话管理接口
+  - name: Models
+    description: 模型管理接口
+  - name: System
+    description: 系统监控接口
