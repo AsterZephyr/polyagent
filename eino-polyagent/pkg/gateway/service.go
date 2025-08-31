@@ -1,8 +1,8 @@
 package gateway
 
 import (
-	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -87,6 +87,8 @@ func (s *GatewayService) setupRouter() {
 	s.router.Use(gin.Recovery())
 	s.router.Use(s.corsMiddleware())
 	s.router.Use(s.rateLimitMiddleware())
+	
+	s.setupSimpleWorkflowRoutes()
 
 	api := s.router.Group("/api/v1")
 	{
@@ -176,7 +178,7 @@ func (s *GatewayService) handleChat(c *gin.Context) {
 	}
 
 	response := &ChatResponse{
-		Response:   result.Response.Content,
+		Response:   result.Content,
 		SessionID:  req.SessionID,
 		AgentID:    result.AgentID,
 		TokensUsed: result.TokensUsed,
@@ -221,7 +223,7 @@ func (s *GatewayService) handleStreamChat(c *gin.Context) {
 		return
 	}
 
-	c.Stream(func(w gin.ResponseWriter) bool {
+	c.Stream(func(w io.Writer) bool {
 		select {
 		case chunk, ok := <-streamChan:
 			if !ok {

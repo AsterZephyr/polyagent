@@ -13,26 +13,35 @@
 
 ## 快速开始
 
-### 环境准备
+> 📋 **完整启动指南**: [STARTUP.md](../STARTUP.md)
 
+### 最简启动方式
+
+**后端服务** (终端1):
 ```bash
-# 安装Go 1.21+
-# 安装PostgreSQL和Redis
-# 复制环境变量配置
-cp .env.example .env
-# 编辑.env文件配置API密钥
+cd /Users/hxz/code/polyagent/eino-polyagent
+PORT=8082 go run cmd/server/main.go
 ```
 
-### 运行开发环境
+**前端服务** (终端2):
+```bash
+cd /Users/hxz/code/polyagent/frontend-eino
+npm install  # 仅首次需要
+npm run dev
+```
+
+**访问应用**: http://localhost:3000
+
+### 传统方式 (可选)
 
 ```bash
 # 安装依赖
 make deps
 
-# 安装开发工具
+# 安装开发工具 (可选)
 make install-tools
 
-# 启动开发服务器
+# 启动开发服务器 (需要air工具)
 make dev
 ```
 
