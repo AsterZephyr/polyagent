@@ -68,7 +68,8 @@ type Agent interface {
 type AgentOrchestrator struct {
 	agents         map[string]Agent
 	sessions       map[string]*SessionContext
-	tools          map[string]Tool
+	tools          map[string]Tool          // Legacy tool storage for backward compatibility
+	toolRegistry   *ToolRegistry           // Enhanced tool registry with validation
 	modelRouter    *ai.ModelRouter
 	workflowEngine *WorkflowEngine
 	contextManager *ContextManager
@@ -246,7 +247,16 @@ func (o *AgentOrchestrator) DeleteAgent(agentID string) error {
 }
 
 func (o *AgentOrchestrator) initializeTools() {
+	// Initialize the enhanced tool registry
+	o.toolRegistry = NewToolRegistry(o.logger)
+	
+	// Register enhanced calculator tool
 	calculatorTool := NewCalculatorTool()
+	if err := o.toolRegistry.RegisterTool(calculatorTool); err != nil {
+		o.logger.WithError(err).Error("Failed to register calculator tool")
+	}
+	
+	// Keep backward compatibility with old tools map
 	o.tools["calculator"] = calculatorTool
 	
 	o.logger.WithField("tools_count", len(o.tools)).Info("Tools initialized")
@@ -254,5 +264,60 @@ func (o *AgentOrchestrator) initializeTools() {
 
 func (o *AgentOrchestrator) generateAgentID() string {
 	return fmt.Sprintf("agent_%d", time.Now().UnixNano())
+}
+
+// ExecuteTool provides enhanced tool execution with validation and error handling
+func (o *AgentOrchestrator) ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) *ToolResult {
+	if o.toolRegistry != nil {
+		return o.toolRegistry.ExecuteTool(ctx, toolName, args)
+	}
+	
+	// Fallback to legacy tool execution
+	if tool, exists := o.tools[toolName]; exists {
+		start := time.Now()
+		result, err := tool.Execute(ctx, args)
+		
+		return &ToolResult{
+			Success:   err == nil,
+			Result:    result,
+			Error:     func() string { if err != nil { return err.Error() }; return "" }(),
+			Duration:  time.Since(start),
+			Timestamp: time.Now(),
+		}
+	}
+	
+	return &ToolResult{
+		Success:   false,
+		Error:     fmt.Sprintf("tool '%s' not found", toolName),
+		Duration:  0,
+		Timestamp: time.Now(),
+	}
+}
+
+// GetToolStats returns performance statistics for a tool
+func (o *AgentOrchestrator) GetToolStats(toolName string) (*ToolStats, bool) {
+	if o.toolRegistry != nil {
+		return o.toolRegistry.GetToolStats(toolName)
+	}
+	return nil, false
+}
+
+// ListAvailableTools returns all available tools with their definitions
+func (o *AgentOrchestrator) ListAvailableTools() map[string]*ToolDefinition {
+	if o.toolRegistry != nil {
+		return o.toolRegistry.ListTools()
+	}
+	
+	// Fallback for legacy tools
+	result := make(map[string]*ToolDefinition)
+	for name, tool := range o.tools {
+		result[name] = &ToolDefinition{
+			Name:        tool.Name(),
+			Description: tool.Description(),
+			Parameters:  make(map[string]ParameterSchema), // No schema for legacy tools
+		}
+	}
+	
+	return result
 }
 
