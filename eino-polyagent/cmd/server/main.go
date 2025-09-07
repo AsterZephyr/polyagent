@@ -1,5 +1,8 @@
 package main
 
+// 注意：这个文件包含通用Agent功能（对话、工作流等）
+// 专门的推荐业务服务器请使用：recommendation_server.go
+
 import (
 	"context"
 	"log"
@@ -10,12 +13,15 @@ import (
 	"github.com/polyagent/eino-polyagent/internal/ai"
 	"github.com/polyagent/eino-polyagent/internal/config"
 	"github.com/polyagent/eino-polyagent/internal/orchestration"
+	"github.com/polyagent/eino-polyagent/internal/recommendation"
 	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	orchestrator *orchestration.AgentOrchestrator
-	logger       *logrus.Logger
+	orchestrator     *orchestration.AgentOrchestrator
+	recOrchestrator  *recommendation.RecommendationOrchestrator
+	recAPIHandler    *recommendation.APIHandler
+	logger           *logrus.Logger
 }
 
 type ChatRequest struct {
@@ -82,9 +88,36 @@ func main() {
 		log.Fatalf("Failed to create default agent: %v", err)
 	}
 
+	// Setup recommendation orchestrator
+	recOrchestrator := recommendation.NewRecommendationOrchestrator(nil, logger)
+	
+	// Create and register recommendation agents
+	dataAgent, err := recommendation.NewDataAgent("rec-data-agent-001", nil, logger)
+	if err != nil {
+		log.Fatalf("Failed to create data agent: %v", err)
+	}
+	
+	modelAgent, err := recommendation.NewModelAgent("rec-model-agent-001", nil, logger)
+	if err != nil {
+		log.Fatalf("Failed to create model agent: %v", err)
+	}
+
+	if err := recOrchestrator.RegisterAgent(dataAgent); err != nil {
+		log.Fatalf("Failed to register data agent: %v", err)
+	}
+	
+	if err := recOrchestrator.RegisterAgent(modelAgent); err != nil {
+		log.Fatalf("Failed to register model agent: %v", err)
+	}
+
+	// Create recommendation API handler
+	recAPIHandler := recommendation.NewAPIHandler(recOrchestrator, logger)
+
 	server := &Server{
-		orchestrator: orchestrator,
-		logger:       logger,
+		orchestrator:    orchestrator,
+		recOrchestrator: recOrchestrator,
+		recAPIHandler:   recAPIHandler,
+		logger:          logger,
 	}
 
 	// Setup Gin router
@@ -114,6 +147,9 @@ func main() {
 		api.GET("/health", server.handleHealth)
 		api.POST("/workflows/:type/execute", server.handleExecuteWorkflow)
 	}
+
+	// Register recommendation API routes
+	server.recAPIHandler.RegisterRoutes(r)
 
 	// Health check endpoint
 	r.GET("/health", server.handleHealth)
