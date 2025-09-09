@@ -1,48 +1,31 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  MessageSquare,
-  Bot,
-  Settings,
   BarChart3,
+  Database,
+  Brain,
+  Settings,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  History
+  Activity
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/stores/useStore'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { to: '/', icon: MessageSquare, label: '对话' },
-  { to: '/agents', icon: Bot, label: '智能体' },
-  { to: '/analytics', icon: BarChart3, label: '分析' },
-  { to: '/settings', icon: Settings, label: '设置' },
+  { to: '/', icon: BarChart3, label: '控制台' },
+  { to: '/data', icon: Database, label: '数据管理' },
+  { to: '/models', icon: Brain, label: '模型管理' },
+  { to: '/analytics', icon: Activity, label: '业务分析' },
+  { to: '/settings', icon: Settings, label: '系统设置' },
 ]
 
 export function Sidebar() {
   const {
     sidebarOpen,
-    setSidebarOpen,
-    sessions,
-    currentSession,
-    setCurrentSession,
-    addSession
+    setSidebarOpen
   } = useStore()
-
-  const handleNewChat = () => {
-    const newSession = {
-      id: `session_${Date.now()}`,
-      name: '新对话',
-      agent_id: 'default',
-      messages: [],
-      created_at: new Date(),
-      updated_at: new Date()
-    }
-    addSession(newSession)
-    setCurrentSession(newSession.id)
-  }
 
   return (
     <div
@@ -54,7 +37,7 @@ export function Sidebar() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         {sidebarOpen && (
-          <h1 className="text-lg font-semibold">PolyAgent</h1>
+          <h1 className="text-lg font-semibold">推荐Agent系统</h1>
         )}
         <Button
           variant="ghost"
@@ -66,18 +49,6 @@ export function Sidebar() {
           ) : (
             <ChevronRight className="w-4 h-4" />
           )}
-        </Button>
-      </div>
-
-      {/* New Chat Button */}
-      <div className="p-4 border-b">
-        <Button
-          onClick={handleNewChat}
-          className="w-full"
-          variant="default"
-        >
-          <Plus className="w-4 h-4" />
-          {sidebarOpen && <span className="ml-2">新对话</span>}
         </Button>
       </div>
 
@@ -103,28 +74,26 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Recent Sessions */}
-        {sidebarOpen && sessions.length > 0 && (
+        {/* System Status */}
+        {sidebarOpen && (
           <div className="p-4">
             <div className="flex items-center gap-2 mb-3 text-sm font-medium text-muted-foreground">
-              <History className="w-4 h-4" />
-              最近对话
+              <Activity className="w-4 h-4" />
+              系统状态
             </div>
-            <div className="space-y-1 max-h-64 overflow-y-auto">
-              {sessions.slice(-10).reverse().map((session) => (
-                <button
-                  key={session.id}
-                  onClick={() => setCurrentSession(session.id)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors truncate",
-                    currentSession === session.id
-                      ? "bg-accent"
-                      : "hover:bg-accent/50"
-                  )}
-                >
-                  {session.name || '未命名对话'}
-                </button>
-              ))}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span>推荐Agent</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>数据Agent</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>模型Agent</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
             </div>
           </div>
         )}

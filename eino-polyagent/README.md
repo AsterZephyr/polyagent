@@ -39,17 +39,30 @@ API接口 ←←←←←←←←←←←← 业务闭环监控 ←←←←�
 cd /Users/hxz/code/polyagent/eino-polyagent
 
 # 方式1: 使用Makefile (推荐)
-make run-rec
+make run
 
 # 方式2: 直接运行推荐专用服务器
-go run cmd/server/recommendation_server.go
+go run cmd/server/main.go
 
 # 方式3: 构建后运行
-make build-rec
+make build
 ./bin/recommendation-agent-server
 ```
 
-### 2. 测试推荐业务API
+### 2. 启动现代化前端界面
+
+```bash
+cd /Users/hxz/code/polyagent/frontend-eino
+npm install  # 仅首次需要
+npm run dev
+```
+
+**访问应用**: 
+- 前端界面: http://localhost:3000
+- 后端API: http://localhost:8080
+- Claude Analytics: http://localhost:3333 (可选)
+
+### 3. 测试推荐业务API
 
 **数据采集**:
 ```bash

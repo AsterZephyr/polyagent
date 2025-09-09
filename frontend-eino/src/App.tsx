@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
-import { ChatPage } from '@/pages/ChatPage'
+import { AgentDashboard } from '@/pages/AgentDashboard'
 import { useStore } from '@/stores/useStore'
-import { apiService } from '@/services/api'
+import { recommendationApi } from '@/services/recommendation'
 
 function App() {
-  const { theme, setAgents, setModels, addNotification } = useStore()
+  const { theme, addNotification } = useStore()
 
   useEffect(() => {
     // Apply theme
@@ -22,38 +22,38 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    // Load initial data
-    const loadData = async () => {
+    // Check recommendation system health
+    const checkHealth = async () => {
       try {
-        // Load agents
-        const agents = await apiService.getAgents()
-        setAgents(agents)
-
-        // Load models
-        const models = await apiService.getModels()
-        setModels(models)
-      } catch (error) {
-        console.error('Failed to load initial data:', error)
+        await recommendationApi.healthCheck()
         addNotification({
-          type: 'warning',
-          title: '数据加载失败',
-          message: '部分功能可能无法正常使用'
+          type: 'success',
+          title: '推荐系统已连接',
+          message: '推荐Agent系统运行正常'
+        })
+      } catch (error) {
+        console.error('Failed to connect to recommendation system:', error)
+        addNotification({
+          type: 'error',
+          title: '推荐系统连接失败',
+          message: '请确保后端服务器正在运行'
         })
       }
     }
 
-    loadData()
-  }, [setAgents, setModels, addNotification])
+    checkHealth()
+  }, [addNotification])
 
   return (
     <Router>
       <div className="min-h-screen bg-background font-sans antialiased">
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<ChatPage />} />
-            <Route path="agents" element={<div className="p-4">智能体管理页面</div>} />
-            <Route path="analytics" element={<div className="p-4">数据分析页面</div>} />
-            <Route path="settings" element={<div className="p-4">设置页面</div>} />
+            <Route index element={<AgentDashboard />} />
+            <Route path="data" element={<div className="p-4">数据管理页面</div>} />
+            <Route path="models" element={<div className="p-4">模型管理页面</div>} />
+            <Route path="analytics" element={<div className="p-4">业务分析页面</div>} />
+            <Route path="settings" element={<div className="p-4">系统设置页面</div>} />
           </Route>
         </Routes>
       </div>
