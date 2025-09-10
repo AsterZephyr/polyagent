@@ -27,7 +27,7 @@ export function Header() {
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold">AI 对话助手</h2>
+        <h2 className="text-xl font-semibold text-foreground">推荐业务智能体系统</h2>
       </div>
       
       <div className="flex items-center gap-2">

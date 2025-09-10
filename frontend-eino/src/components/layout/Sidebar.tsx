@@ -30,7 +30,7 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        "fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-50",
+        "fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-50 shadow-sm",
         sidebarOpen ? "w-64" : "w-16"
       )}
     >

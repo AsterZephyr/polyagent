@@ -1,7 +1,6 @@
 "use client";
 
 import { Database, Brain, Zap, BarChart3, Target, TrendingUp } from "lucide-react";
-import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { recommendationApi } from "@/services/recommendation";
@@ -20,18 +19,24 @@ interface SystemMetrics {
 export function RecommendationAgentGrid() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [agents, setAgents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
         const [metricsData, agentsData] = await Promise.all([
           recommendationApi.getSystemMetrics(),
           recommendationApi.getAgents()
         ]);
         setMetrics(metricsData);
         setAgents(agentsData);
+        setLoading(false);
       } catch (error) {
         console.error('Failed to fetch data:', error);
+        setError('无法连接到推荐系统，请检查后端服务是否运行');
+        setLoading(false);
       }
     };
 
@@ -40,23 +45,51 @@ export function RecommendationAgentGrid() {
     return () => clearInterval(interval);
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">正在加载推荐系统数据...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-destructive text-6xl">⚠️</div>
+          <h2 className="text-2xl font-bold text-foreground">连接失败</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+          >
+            重试
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-foreground">
             推荐业务智能体系统
           </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             基于Agent4Rec架构的专业推荐业务闭环，从数据采集到实时推荐的完整AI驱动解决方案
           </p>
         </div>
 
         {/* Agent Grid */}
-        <ul className="grid grid-cols-1 grid-rows-none gap-6 md:grid-cols-12 md:grid-rows-3 lg:gap-6 xl:max-h-[40rem] xl:grid-rows-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <GridItem
-            area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
             icon={<Database className="h-6 w-6" />}
             title="数据采集Agent"
             subtitle="DataAgent"
@@ -64,17 +97,14 @@ export function RecommendationAgentGrid() {
               <div className="space-y-2">
                 <p>专业数据采集和特征工程智能体</p>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-green-400">活跃状态</span>
-                  <span className="text-blue-400">{metrics?.queued_tasks || 0} 队列任务</span>
+                  <span className="text-green-600 dark:text-green-400">活跃状态</span>
+                  <span className="text-blue-600 dark:text-blue-400">{metrics?.queued_tasks || 0} 队列任务</span>
                 </div>
               </div>
             }
-            bgGradient="from-blue-500/20 to-cyan-500/20"
-            iconBg="bg-blue-500/20 border-blue-500/30"
           />
           
           <GridItem
-            area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
             icon={<Brain className="h-6 w-6" />}
             title="模型训练Agent"
             subtitle="ModelAgent"
@@ -82,17 +112,14 @@ export function RecommendationAgentGrid() {
               <div className="space-y-2">
                 <p>智能推荐算法训练与优化</p>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-purple-400">协同过滤</span>
-                  <span className="text-pink-400">深度学习</span>
+                  <span className="text-purple-600 dark:text-purple-400">协同过滤</span>
+                  <span className="text-pink-600 dark:text-pink-400">深度学习</span>
                 </div>
               </div>
             }
-            bgGradient="from-purple-500/20 to-pink-500/20"
-            iconBg="bg-purple-500/20 border-purple-500/30"
           />
           
           <GridItem
-            area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
             icon={<Zap className="h-6 w-6" />}
             title="实时推荐引擎"
             subtitle="ServiceAgent"
@@ -100,19 +127,16 @@ export function RecommendationAgentGrid() {
               <div className="space-y-2">
                 <p>高性能推荐服务与预测</p>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-yellow-400">{metrics?.average_latency || 0}ms 延迟</span>
-                  <span className="text-green-400">
+                  <span className="text-yellow-600 dark:text-yellow-400">{metrics?.average_latency || 0}ms 延迟</span>
+                  <span className="text-green-600 dark:text-green-400">
                     {metrics?.success_rate_today ? (metrics.success_rate_today * 100).toFixed(1) : '0'}% 成功率
                   </span>
                 </div>
               </div>
             }
-            bgGradient="from-yellow-500/20 to-orange-500/20"
-            iconBg="bg-yellow-500/20 border-yellow-500/30"
           />
           
           <GridItem
-            area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
             icon={<BarChart3 className="h-6 w-6" />}
             title="效果评估Agent"
             subtitle="EvalAgent"
@@ -120,17 +144,14 @@ export function RecommendationAgentGrid() {
               <div className="space-y-2">
                 <p>A/B测试与效果监控分析</p>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-emerald-400">NDCG@K</span>
-                  <span className="text-teal-400">Precision@K</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">NDCG@K</span>
+                  <span className="text-teal-600 dark:text-teal-400">Precision@K</span>
                 </div>
               </div>
             }
-            bgGradient="from-emerald-500/20 to-teal-500/20"
-            iconBg="bg-emerald-500/20 border-emerald-500/30"
           />
           
           <GridItem
-            area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
             icon={<Target className="h-6 w-6" />}
             title="业务指标监控"
             subtitle="BusinessMetrics"
@@ -138,18 +159,16 @@ export function RecommendationAgentGrid() {
               <div className="space-y-2">
                 <p>点击率、转化率、覆盖率实时监控</p>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-rose-400">今日 {metrics?.total_tasks_today || 0} 任务</span>
-                  <span className="text-orange-400">{metrics?.processing_tasks || 0} 处理中</span>
+                  <span className="text-rose-600 dark:text-rose-400">今日 {metrics?.total_tasks_today || 0} 任务</span>
+                  <span className="text-orange-600 dark:text-orange-400">{metrics?.processing_tasks || 0} 处理中</span>
                 </div>
               </div>
             }
-            bgGradient="from-rose-500/20 to-red-500/20"
-            iconBg="bg-rose-500/20 border-rose-500/30"
           />
-        </ul>
+        </div>
 
         {/* System Status */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatusCard 
             title="总代理数"
             value={metrics?.total_agents || 0}
@@ -181,56 +200,34 @@ export function RecommendationAgentGrid() {
 }
 
 interface GridItemProps {
-  area: string;
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   description: React.ReactNode;
-  bgGradient: string;
-  iconBg: string;
 }
 
-const GridItem = ({ area, icon, title, subtitle, description, bgGradient, iconBg }: GridItemProps) => {
+const GridItem = ({ icon, title, subtitle, description }: GridItemProps) => {
   return (
-    <li className={cn("min-h-[18rem] list-none", area)}>
-      <div className="relative h-full rounded-[1.25rem] border border-gray-800/50 p-2 md:rounded-[1.5rem] md:p-3">
-        <GlowingEffect
-          spread={40}
-          glow={true}
-          disabled={false}
-          proximity={64}
-          inactiveZone={0.01}
-          borderWidth={2}
-        />
-        <div className={cn(
-          "relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border border-gray-800/50 p-6 shadow-2xl",
-          "bg-gradient-to-br", bgGradient,
-          "backdrop-blur-sm"
-        )}>
-          <div className="relative flex flex-1 flex-col justify-between gap-4">
-            <div className={cn(
-              "w-fit rounded-xl border p-3",
-              iconBg
-            )}>
-              <div className="text-white">
-                {icon}
-              </div>
+    <div className="group relative h-full">
+      <div className="relative h-full rounded-lg border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary/20">
+        <div className="flex h-full flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-200 group-hover:bg-primary/20">
+              {icon}
             </div>
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-gray-400 font-medium mb-1">{subtitle}</div>
-                <h3 className="text-2xl font-bold text-white leading-tight">
-                  {title}
-                </h3>
-              </div>
-              <div className="text-gray-300 text-sm leading-relaxed">
-                {description}
-              </div>
+            <div>
+              <div className="text-xs font-medium text-muted-foreground">{subtitle}</div>
+              <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors duration-200">
+                {title}
+              </h3>
             </div>
+          </div>
+          <div className="flex-1 text-sm text-muted-foreground">
+            {description}
           </div>
         </div>
       </div>
-    </li>
+    </div>
   );
 };
 
@@ -243,31 +240,21 @@ interface StatusCardProps {
 
 const StatusCard = ({ title, value, subtitle, color }: StatusCardProps) => {
   const colorClasses = {
-    blue: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
-    purple: "from-purple-500/20 to-pink-500/20 border-purple-500/30", 
-    green: "from-green-500/20 to-emerald-500/20 border-green-500/30",
-    orange: "from-orange-500/20 to-red-500/20 border-orange-500/30"
+    blue: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100",
+    purple: "border-purple-200 bg-purple-50 text-purple-900 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-100", 
+    green: "border-green-200 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-100",
+    orange: "border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-100"
   };
 
   return (
-    <div className="relative rounded-2xl border border-gray-800/50 p-1">
-      <GlowingEffect
-        spread={30}
-        glow={true}
-        disabled={false}
-        proximity={32}
-        inactiveZone={0.1}
-        borderWidth={1}
-      />
-      <div className={cn(
-        "relative rounded-xl border p-6 backdrop-blur-sm",
-        "bg-gradient-to-br", colorClasses[color]
-      )}>
-        <div className="space-y-2">
-          <div className="text-gray-400 text-sm font-medium">{title}</div>
-          <div className="text-3xl font-bold text-white">{value}</div>
-          <div className="text-gray-300 text-xs">{subtitle}</div>
-        </div>
+    <div className={cn(
+      "rounded-lg border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group",
+      colorClasses[color]
+    )}>
+      <div className="space-y-2">
+        <div className="text-sm font-medium opacity-70 group-hover:opacity-90 transition-opacity duration-200">{title}</div>
+        <div className="text-3xl font-bold group-hover:scale-105 transition-transform duration-200">{value}</div>
+        <div className="text-xs opacity-60 group-hover:opacity-80 transition-opacity duration-200">{subtitle}</div>
       </div>
     </div>
   );
