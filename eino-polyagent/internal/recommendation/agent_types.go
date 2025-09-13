@@ -119,11 +119,11 @@ type AgentMetrics struct {
 
 // ResourceUsage tracks resource consumption
 type ResourceUsage struct {
-	CPUPercent   float64 `json:"cpu_percent"`
-	MemoryMB     int64   `json:"memory_mb"`
-	DiskUsageMB  int64   `json:"disk_usage_mb"`
-	NetworkInMB  int64   `json:"network_in_mb"`
-	NetworkOutMB int64   `json:"network_out_mb"`
+	CPUPercent   float64 `json:"cpuPercent"`
+	MemoryMB     int64   `json:"memoryMb"`
+	DiskUsageMB  int64   `json:"diskUsageMb"`
+	NetworkInMB  int64   `json:"networkInMb"`
+	NetworkOutMB int64   `json:"networkOutMb"`
 }
 
 // TaskMetrics tracks individual task performance
