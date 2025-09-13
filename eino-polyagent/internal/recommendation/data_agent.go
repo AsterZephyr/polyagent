@@ -72,15 +72,16 @@ type DataMonitor struct {
 
 // DataSet represents a collection of data with metadata
 type DataSet struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
+	ID          string                   `json:"id"`
+	Name        string                   `json:"name"`
+	Type        string                   `json:"type"` // "ratings", "users", "movies", etc.
 	Data        []map[string]interface{} `json:"data"`
-	Schema      *DataSchema            `json:"schema"`
-	Metadata    map[string]interface{} `json:"metadata"`
-	Quality     *QualityMetrics        `json:"quality"`
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
-	Size        int64                  `json:"size"`
+	Schema      *DataSchema              `json:"schema"`
+	Metadata    map[string]interface{}   `json:"metadata"`
+	Quality     *QualityMetrics          `json:"quality"`
+	CreatedAt   time.Time                `json:"created_at"`
+	UpdatedAt   time.Time                `json:"updated_at"`
+	Size        int64                    `json:"size"`
 }
 
 // DataSchema defines the structure and types of data
@@ -147,62 +148,7 @@ type Feature struct {
 	LastUpdated time.Time              `json:"last_updated"`
 }
 
-// DataQuery represents a query for data retrieval
-type DataQuery struct {
-	Table     string                 `json:"table"`
-	Fields    []string               `json:"fields"`
-	Filters   map[string]interface{} `json:"filters"`
-	OrderBy   []string               `json:"order_by"`
-	Limit     int                    `json:"limit"`
-	Offset    int                    `json:"offset"`
-	TimeRange *TimeRange             `json:"time_range"`
-}
-
-// TimeRange defines time-based filtering
-type TimeRange struct {
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
-}
-
-// DeleteCriteria defines criteria for data deletion
-type DeleteCriteria struct {
-	Table     string                 `json:"table"`
-	Filters   map[string]interface{} `json:"filters"`
-	OlderThan *time.Time             `json:"older_than"`
-}
-
-// ProcessingStats tracks data processing performance
-type ProcessingStats struct {
-	RecordsProcessed int64         `json:"records_processed"`
-	ProcessingTime   time.Duration `json:"processing_time"`
-	ErrorCount       int64         `json:"error_count"`
-	ThroughputRPS    float64       `json:"throughput_rps"`
-}
-
-// StorageStats tracks storage utilization
-type StorageStats struct {
-	TotalSize      int64   `json:"total_size_bytes"`
-	UsedSize       int64   `json:"used_size_bytes"`
-	RecordCount    int64   `json:"record_count"`
-	TableCount     int     `json:"table_count"`
-	FragmentationRatio float64 `json:"fragmentation_ratio"`
-}
-
-// AlertHandler handles data quality alerts
-type AlertHandler interface {
-	HandleAlert(alert *QualityAlert) error
-}
-
-// QualityAlert represents a data quality alert
-type QualityAlert struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"`
-	Severity    string    `json:"severity"`
-	Message     string    `json:"message"`
-	Data        *DataSet  `json:"data"`
-	Timestamp   time.Time `json:"timestamp"`
-	Acknowledged bool     `json:"acknowledged"`
-}
+// Note: Common types moved to agent_types.go to avoid duplication
 
 // NewDataAgent creates a new DataAgent instance
 func NewDataAgent(id string, config *DataAgentConfig, logger *logrus.Logger) (*DataAgent, error) {

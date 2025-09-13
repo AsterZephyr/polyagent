@@ -87,11 +87,11 @@ type TrainingParams struct {
 
 // EarlyStoppingConfig defines early stopping criteria
 type EarlyStoppingConfig struct {
-	Enabled   bool    `json:"enabled"`
-	Patience  int     `json:"patience"`
-	MinDelta  float64 `json:"min_delta"`
-	Metric    string  `json:"metric"`
-	Mode      string  `json:"mode"` // "min" or "max"
+	Enabled  bool    `json:"enabled"`
+	Patience int     `json:"patience"`
+	MinDelta float64 `json:"min_delta"`
+	Metric   string  `json:"metric"`
+	Mode     string  `json:"mode"` // "min" or "max"
 }
 
 // TrainedModel represents a trained recommendation model
@@ -110,46 +110,7 @@ type TrainedModel struct {
 	TrainingTime    time.Duration          `json:"training_time"`
 }
 
-// ModelStatus represents the status of a trained model
-type ModelStatus string
-
-const (
-	ModelStatusTraining  ModelStatus = "training"
-	ModelStatusTrained   ModelStatus = "trained"
-	ModelStatusDeployed  ModelStatus = "deployed"
-	ModelStatusFailed    ModelStatus = "failed"
-	ModelStatusRetired   ModelStatus = "retired"
-)
-
-// PredictionInput contains input for model prediction
-type PredictionInput struct {
-	UserID      string                 `json:"user_id"`
-	ItemIDs     []string               `json:"item_ids,omitempty"`
-	UserFeatures map[string]interface{} `json:"user_features,omitempty"`
-	ItemFeatures map[string]interface{} `json:"item_features,omitempty"`
-	Context     map[string]interface{} `json:"context,omitempty"`
-	TopK        int                    `json:"top_k"`
-}
-
-// PredictionOutput contains model prediction results
-type PredictionOutput struct {
-	UserID        string              `json:"user_id"`
-	Recommendations []RecommendationItem `json:"recommendations"`
-	Scores        map[string]float64   `json:"scores"`
-	Explanations  map[string]string    `json:"explanations,omitempty"`
-	ModelID       string              `json:"model_id"`
-	Timestamp     time.Time           `json:"timestamp"`
-}
-
-// RecommendationItem represents a recommended item
-type RecommendationItem struct {
-	ItemID      string                 `json:"item_id"`
-	Score       float64                `json:"score"`
-	Rank        int                    `json:"rank"`
-	Reason      string                 `json:"reason,omitempty"`
-	Features    map[string]interface{} `json:"features,omitempty"`
-	Confidence  float64                `json:"confidence"`
-}
+// Note: ModelStatus, PredictionInput, PredictionOutput moved to agent_types.go
 
 // TrainingMetrics contains metrics from model training
 type TrainingMetrics struct {
@@ -166,35 +127,15 @@ type TrainingMetrics struct {
 type EvaluationMetrics struct {
 	RMSE          float64            `json:"rmse"`
 	MAE           float64            `json:"mae"`
-	Precision     map[int]float64    `json:"precision"`     // Precision@K
-	Recall        map[int]float64    `json:"recall"`        // Recall@K
-	NDCG          map[int]float64    `json:"ndcg"`          // NDCG@K
-	HitRate       map[int]float64    `json:"hit_rate"`      // HitRate@K
+	Precision     map[int]float64    `json:"precision"` // Precision@K
+	Recall        map[int]float64    `json:"recall"`    // Recall@K
+	NDCG          map[int]float64    `json:"ndcg"`      // NDCG@K
+	HitRate       map[int]float64    `json:"hit_rate"`  // HitRate@K
 	AUC           float64            `json:"auc"`
 	Coverage      float64            `json:"coverage"`
 	Diversity     float64            `json:"diversity"`
 	Novelty       float64            `json:"novelty"`
 	CustomMetrics map[string]float64 `json:"custom_metrics"`
-}
-
-// HyperParameter defines a hyperparameter specification
-type HyperParameter struct {
-	Name        string      `json:"name"`
-	Type        string      `json:"type"`        // "int", "float", "categorical"
-	MinValue    float64     `json:"min_value"`
-	MaxValue    float64     `json:"max_value"`
-	Choices     []string    `json:"choices"`     // For categorical parameters
-	DefaultValue interface{} `json:"default_value"`
-	Description string      `json:"description"`
-}
-
-// AlgorithmMetrics tracks algorithm performance statistics
-type AlgorithmMetrics struct {
-	TrainingCount   int64         `json:"training_count"`
-	SuccessRate     float64       `json:"success_rate"`
-	AverageTrainingTime time.Duration `json:"average_training_time"`
-	BestScore       float64       `json:"best_score"`
-	LastTrainingTime time.Time    `json:"last_training_time"`
 }
 
 // ModelTrainer handles model training orchestration
@@ -206,13 +147,13 @@ type ModelTrainer struct {
 
 // TrainingJob represents an active training job
 type TrainingJob struct {
-	ID          string        `json:"id"`
-	Algorithm   string        `json:"algorithm"`
-	Status      string        `json:"status"`
-	Progress    float64       `json:"progress"`
-	StartTime   time.Time     `json:"start_time"`
-	EstimatedETA time.Time    `json:"estimated_eta"`
-	Logs        []string      `json:"logs"`
+	ID           string    `json:"id"`
+	Algorithm    string    `json:"algorithm"`
+	Status       string    `json:"status"`
+	Progress     float64   `json:"progress"`
+	StartTime    time.Time `json:"start_time"`
+	EstimatedETA time.Time `json:"estimated_eta"`
+	Logs         []string  `json:"logs"`
 }
 
 // ModelEvaluator handles model evaluation
@@ -222,10 +163,10 @@ type ModelEvaluator struct {
 
 // EvaluationSuite defines a set of evaluation tests
 type EvaluationSuite struct {
-	Name        string                 `json:"name"`
-	TestData    *TrainingData          `json:"test_data"`
-	Metrics     []string               `json:"metrics"`
-	Parameters  map[string]interface{} `json:"parameters"`
+	Name       string                 `json:"name"`
+	TestData   *TrainingData          `json:"test_data"`
+	Metrics    []string               `json:"metrics"`
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 // HyperParameterOptimizer handles automatic hyperparameter tuning
@@ -249,10 +190,10 @@ type DeploymentStrategy interface {
 
 // ModelRegistry manages model versions and metadata
 type ModelRegistry struct {
-	models    map[string]*TrainedModel
-	versions  map[string][]string // modelName -> versions
-	active    map[string]string   // modelName -> activeVersion
-	mutex     sync.RWMutex
+	models   map[string]*TrainedModel
+	versions map[string][]string // modelName -> versions
+	active   map[string]string   // modelName -> activeVersion
+	mutex    sync.RWMutex
 }
 
 // NewModelAgent creates a new ModelAgent instance
@@ -324,7 +265,7 @@ func (ma *ModelAgent) GetStatus() AgentStatus {
 func (ma *ModelAgent) GetMetrics() *AgentMetrics {
 	ma.mutex.RLock()
 	defer ma.mutex.RUnlock()
-	
+
 	// Create a copy to avoid race conditions
 	metricsCopy := *ma.metrics
 	return &metricsCopy
@@ -358,20 +299,20 @@ func (ma *ModelAgent) Process(ctx context.Context, task *RecommendationTask) (*R
 	}()
 
 	start := time.Now()
-	
+
 	result, err := ma.processTask(ctx, task)
-	
+
 	duration := time.Since(start)
-	
+
 	// Update metrics
 	ma.mutex.Lock()
 	if err == nil {
-		ma.metrics.SuccessRate = float64(ma.metrics.TasksProcessed) / float64(ma.metrics.TasksProcessed + ma.metrics.ErrorCount + 1)
+		ma.metrics.SuccessRate = float64(ma.metrics.TasksProcessed) / float64(ma.metrics.TasksProcessed+ma.metrics.ErrorCount+1)
 	} else {
 		ma.metrics.ErrorCount++
-		ma.metrics.SuccessRate = float64(ma.metrics.TasksProcessed + 1) / float64(ma.metrics.TasksProcessed + ma.metrics.ErrorCount + 1)
+		ma.metrics.SuccessRate = float64(ma.metrics.TasksProcessed+1) / float64(ma.metrics.TasksProcessed+ma.metrics.ErrorCount+1)
 	}
-	
+
 	// Update average latency
 	if ma.metrics.AverageLatency == 0 {
 		ma.metrics.AverageLatency = duration
@@ -431,7 +372,7 @@ func (ma *ModelAgent) handleModelTraining(ctx context.Context, task *Recommendat
 
 	// Generate mock training data
 	trainingData := ma.generateMockTrainingData()
-	
+
 	// Create training parameters
 	trainingParams := &TrainingParams{
 		Algorithm:        algorithm,
@@ -467,19 +408,19 @@ func (ma *ModelAgent) handleModelTraining(ctx context.Context, task *Recommendat
 	ma.registry.mutex.Unlock()
 
 	data := map[string]interface{}{
-		"model_id":       trainedModel.ID,
-		"algorithm":      trainedModel.Algorithm,
-		"training_time":  trainedModel.TrainingTime,
+		"model_id":      trainedModel.ID,
+		"algorithm":     trainedModel.Algorithm,
+		"training_time": trainedModel.TrainingTime,
 	}
-	
+
 	if trainedModel.TrainingMetrics != nil {
 		data["final_loss"] = trainedModel.TrainingMetrics.FinalValidLoss
 	}
 
 	return &RecommendationResult{
-		TaskID:  task.ID,
-		Success: true,
-		Data: data,
+		TaskID:    task.ID,
+		Success:   true,
+		Data:      data,
 		CreatedAt: time.Now(),
 	}, nil
 }
@@ -521,7 +462,7 @@ func (ma *ModelAgent) handleModelEvaluation(ctx context.Context, task *Recommend
 		TaskID:  task.ID,
 		Success: true,
 		Data: map[string]interface{}{
-			"model_id":        modelID,
+			"model_id":           modelID,
 			"evaluation_metrics": evalMetrics,
 		},
 		CreatedAt: time.Now(),
@@ -557,9 +498,9 @@ func (ma *ModelAgent) handleHyperParameterTuning(ctx context.Context, task *Reco
 		TaskID:  task.ID,
 		Success: true,
 		Data: map[string]interface{}{
-			"algorithm":        algorithm,
-			"best_parameters":  bestParams,
-			"best_score":       bestScore,
+			"algorithm":           algorithm,
+			"best_parameters":     bestParams,
+			"best_score":          bestScore,
 			"optimization_method": ma.optimizer.method,
 		},
 		CreatedAt: time.Now(),
@@ -598,9 +539,9 @@ func (ma *ModelAgent) handleModelDeployment(ctx context.Context, task *Recommend
 		TaskID:  task.ID,
 		Success: true,
 		Data: map[string]interface{}{
-			"model_id":       modelID,
+			"model_id":          modelID,
 			"deployment_status": "deployed",
-			"deployment_time": time.Now(),
+			"deployment_time":   time.Now(),
 		},
 		CreatedAt: time.Now(),
 	}, nil
@@ -609,7 +550,7 @@ func (ma *ModelAgent) handleModelDeployment(ctx context.Context, task *Recommend
 // generateMockTrainingData generates sample training data for testing
 func (ma *ModelAgent) generateMockTrainingData() *TrainingData {
 	rand.Seed(time.Now().UnixNano())
-	
+
 	numUsers := 1000
 	numItems := 500
 	numInteractions := 5000
@@ -617,9 +558,9 @@ func (ma *ModelAgent) generateMockTrainingData() *TrainingData {
 	userFeatures := make([]map[string]interface{}, numUsers)
 	for i := 0; i < numUsers; i++ {
 		userFeatures[i] = map[string]interface{}{
-			"user_id": fmt.Sprintf("user_%d", i),
-			"age":     rand.Intn(60) + 18,
-			"gender":  []string{"male", "female"}[rand.Intn(2)],
+			"user_id":  fmt.Sprintf("user_%d", i),
+			"age":      rand.Intn(60) + 18,
+			"gender":   []string{"male", "female"}[rand.Intn(2)],
 			"location": fmt.Sprintf("city_%d", rand.Intn(50)),
 		}
 	}
@@ -661,19 +602,19 @@ func (ma *ModelAgent) generateMockTrainingData() *TrainingData {
 // extractHyperParameters extracts hyperparameters from task parameters
 func (ma *ModelAgent) extractHyperParameters(params map[string]interface{}) map[string]interface{} {
 	hyperParams := make(map[string]interface{})
-	
+
 	if hp, ok := params["hyperparameters"]; ok {
 		if hpMap, ok := hp.(map[string]interface{}); ok {
 			return hpMap
 		}
 	}
-	
+
 	// Default hyperparameters
 	hyperParams["learning_rate"] = 0.001
 	hyperParams["regularization"] = 0.01
 	hyperParams["embedding_dim"] = 64
 	hyperParams["num_epochs"] = 100
-	
+
 	return hyperParams
 }
 
@@ -681,12 +622,12 @@ func (ma *ModelAgent) extractHyperParameters(params map[string]interface{}) map[
 func (ma *ModelAgent) evaluateModel(ctx context.Context, model *TrainedModel) *EvaluationMetrics {
 	// Mock evaluation - in real implementation this would run actual evaluation
 	rand.Seed(time.Now().UnixNano())
-	
+
 	return &EvaluationMetrics{
-		RMSE: 0.8 + rand.Float64()*0.4,  // 0.8-1.2
-		MAE:  0.6 + rand.Float64()*0.3,  // 0.6-0.9
+		RMSE: 0.8 + rand.Float64()*0.4, // 0.8-1.2
+		MAE:  0.6 + rand.Float64()*0.3, // 0.6-0.9
 		Precision: map[int]float64{
-			5:  0.15 + rand.Float64()*0.1, // 0.15-0.25
+			5:  0.15 + rand.Float64()*0.1,  // 0.15-0.25
 			10: 0.12 + rand.Float64()*0.08, // 0.12-0.20
 			20: 0.08 + rand.Float64()*0.06, // 0.08-0.14
 		},
@@ -696,13 +637,13 @@ func (ma *ModelAgent) evaluateModel(ctx context.Context, model *TrainedModel) *E
 			20: 0.28 + rand.Float64()*0.12, // 0.28-0.40
 		},
 		NDCG: map[int]float64{
-			5:  0.25 + rand.Float64()*0.1,  // 0.25-0.35
-			10: 0.30 + rand.Float64()*0.1,  // 0.30-0.40
-			20: 0.35 + rand.Float64()*0.1,  // 0.35-0.45
+			5:  0.25 + rand.Float64()*0.1, // 0.25-0.35
+			10: 0.30 + rand.Float64()*0.1, // 0.30-0.40
+			20: 0.35 + rand.Float64()*0.1, // 0.35-0.45
 		},
-		AUC:       0.75 + rand.Float64()*0.2, // 0.75-0.95
-		Coverage:  0.60 + rand.Float64()*0.3, // 0.60-0.90
-		Diversity: 0.70 + rand.Float64()*0.2, // 0.70-0.90
+		AUC:       0.75 + rand.Float64()*0.2,  // 0.75-0.95
+		Coverage:  0.60 + rand.Float64()*0.3,  // 0.60-0.90
+		Diversity: 0.70 + rand.Float64()*0.2,  // 0.70-0.90
 		Novelty:   0.65 + rand.Float64()*0.25, // 0.65-0.90
 	}
 }
@@ -711,22 +652,22 @@ func (ma *ModelAgent) evaluateModel(ctx context.Context, model *TrainedModel) *E
 func (ma *ModelAgent) optimizeHyperParameters(ctx context.Context, algo RecommendationAlgorithm) (map[string]interface{}, float64) {
 	// Mock hyperparameter optimization
 	rand.Seed(time.Now().UnixNano())
-	
+
 	bestParams := map[string]interface{}{
-		"learning_rate":    0.001 + rand.Float64()*0.009, // 0.001-0.01
-		"regularization":   0.001 + rand.Float64()*0.049, // 0.001-0.05
-		"embedding_dim":    32 + rand.Intn(97),           // 32-128
-		"batch_size":       16 + rand.Intn(113),          // 16-128
+		"learning_rate":  0.001 + rand.Float64()*0.009, // 0.001-0.01
+		"regularization": 0.001 + rand.Float64()*0.049, // 0.001-0.05
+		"embedding_dim":  32 + rand.Intn(97),           // 32-128
+		"batch_size":     16 + rand.Intn(113),          // 16-128
 	}
-	
+
 	bestScore := 0.70 + rand.Float64()*0.25 // 0.70-0.95
-	
+
 	ma.logger.WithFields(logrus.Fields{
-		"algorithm":    algo.Name(),
-		"best_params":  bestParams,
-		"best_score":   bestScore,
+		"algorithm":   algo.Name(),
+		"best_params": bestParams,
+		"best_score":  bestScore,
 	}).Info("Hyperparameter optimization completed")
-	
+
 	return bestParams, bestScore
 }
 
@@ -774,15 +715,15 @@ func (ma *ModelAgent) GetPerformanceStats() *PerformanceStats {
 	failedTasks := ma.metrics.TasksProcessed - successfulTasks
 
 	return &PerformanceStats{
-		Uptime:           uptime,
-		TotalTasks:       ma.metrics.TasksProcessed,
-		SuccessfulTasks:  successfulTasks,
-		FailedTasks:      failedTasks,
-		AverageLatency:   ma.metrics.AverageLatency,
-		P95Latency:       ma.metrics.AverageLatency * 135 / 100, // Estimated
-		P99Latency:       ma.metrics.AverageLatency * 180 / 100, // Estimated
-		ThroughputQPS:    float64(ma.metrics.TasksProcessed) / uptime.Seconds(),
-		ErrorRate:        float64(failedTasks) / float64(ma.metrics.TasksProcessed),
+		Uptime:          uptime,
+		TotalTasks:      ma.metrics.TasksProcessed,
+		SuccessfulTasks: successfulTasks,
+		FailedTasks:     failedTasks,
+		AverageLatency:  ma.metrics.AverageLatency,
+		P95Latency:      ma.metrics.AverageLatency * 135 / 100, // Estimated
+		P99Latency:      ma.metrics.AverageLatency * 180 / 100, // Estimated
+		ThroughputQPS:   float64(ma.metrics.TasksProcessed) / uptime.Seconds(),
+		ErrorRate:       float64(failedTasks) / float64(ma.metrics.TasksProcessed),
 	}
 }
 
@@ -802,13 +743,13 @@ func (ma *ModelAgent) initializeAlgorithms() error {
 func (ma *ModelAgent) GetModels() map[string]*TrainedModel {
 	ma.registry.mutex.RLock()
 	defer ma.registry.mutex.RUnlock()
-	
+
 	result := make(map[string]*TrainedModel)
 	for id, model := range ma.models {
 		modelCopy := *model
 		result[id] = &modelCopy
 	}
-	
+
 	return result
 }
 
@@ -824,17 +765,17 @@ func (mcf *MockCollaborativeFiltering) Name() string {
 func (mcf *MockCollaborativeFiltering) Train(ctx context.Context, trainingData *TrainingData, params *TrainingParams) (*TrainedModel, error) {
 	// Mock training simulation
 	start := time.Now()
-	
+
 	// Simulate training time
 	time.Sleep(time.Millisecond * 500)
-	
+
 	trainingTime := time.Since(start)
-	
+
 	model := &TrainedModel{
-		ID:        fmt.Sprintf("model_cf_%d", time.Now().UnixNano()),
-		Name:      "Collaborative Filtering Model",
-		Algorithm: "collaborative_filtering",
-		Version:   "1.0.0",
+		ID:         fmt.Sprintf("model_cf_%d", time.Now().UnixNano()),
+		Name:       "Collaborative Filtering Model",
+		Algorithm:  "collaborative_filtering",
+		Version:    "1.0.0",
 		Parameters: params.HyperParameters,
 		TrainingMetrics: &TrainingMetrics{
 			TrainLoss:      []float64{1.2, 1.0, 0.9, 0.85, 0.82},
@@ -849,19 +790,19 @@ func (mcf *MockCollaborativeFiltering) Train(ctx context.Context, trainingData *
 		CreatedAt:    time.Now(),
 		TrainingTime: trainingTime,
 		Metadata: map[string]interface{}{
-			"num_users":       len(trainingData.UserFeatures),
-			"num_items":       len(trainingData.ItemFeatures),
+			"num_users":        len(trainingData.UserFeatures),
+			"num_items":        len(trainingData.ItemFeatures),
 			"num_interactions": len(trainingData.Interactions),
 		},
 	}
-	
+
 	return model, nil
 }
 
 func (mcf *MockCollaborativeFiltering) Predict(ctx context.Context, model *TrainedModel, input *PredictionInput) (*PredictionOutput, error) {
 	// Mock prediction
 	rand.Seed(time.Now().UnixNano())
-	
+
 	recommendations := make([]RecommendationItem, input.TopK)
 	for i := 0; i < input.TopK; i++ {
 		recommendations[i] = RecommendationItem{
@@ -871,7 +812,7 @@ func (mcf *MockCollaborativeFiltering) Predict(ctx context.Context, model *Train
 			Confidence: 0.7 + rand.Float64()*0.3,
 		}
 	}
-	
+
 	return &PredictionOutput{
 		UserID:          input.UserID,
 		Recommendations: recommendations,
@@ -883,31 +824,32 @@ func (mcf *MockCollaborativeFiltering) Predict(ctx context.Context, model *Train
 func (mcf *MockCollaborativeFiltering) GetHyperParameters() map[string]HyperParameter {
 	return map[string]HyperParameter{
 		"num_factors": {
-			Name:         "num_factors",
-			Type:         "int",
-			MinValue:     10,
-			MaxValue:     200,
-			DefaultValue: 64,
-			Description:  "Number of latent factors",
+			Name:        "num_factors",
+			Type:        "int",
+			Min:         10,
+			Max:         200,
+			Default:     64,
+			Description: "Number of latent factors",
 		},
 		"learning_rate": {
-			Name:         "learning_rate",
-			Type:         "float",
-			MinValue:     0.0001,
-			MaxValue:     0.1,
-			DefaultValue: 0.01,
-			Description:  "Learning rate for optimization",
+			Name:        "learning_rate",
+			Type:        "float",
+			Min:         0.0001,
+			Max:         0.1,
+			Default:     0.01,
+			Description: "Learning rate for optimization",
 		},
 	}
 }
 
 func (mcf *MockCollaborativeFiltering) GetMetrics() *AlgorithmMetrics {
 	return &AlgorithmMetrics{
-		TrainingCount:       10,
-		SuccessRate:         0.9,
-		AverageTrainingTime: 2 * time.Minute,
-		BestScore:           0.85,
-		LastTrainingTime:    time.Now().Add(-1 * time.Hour),
+		TrainingTime:   2 * time.Minute,
+		PredictionTime: 100 * time.Millisecond,
+		MemoryUsage:    1024 * 1024, // 1MB
+		ModelSize:      512 * 1024,  // 512KB
+		Accuracy:       0.85,
+		LastUpdated:    time.Now().Add(-1 * time.Hour),
 	}
 }
 
@@ -922,12 +864,12 @@ func (mcb *MockContentBased) Train(ctx context.Context, trainingData *TrainingDa
 	start := time.Now()
 	time.Sleep(time.Millisecond * 100)
 	trainingTime := time.Since(start)
-	
+
 	return &TrainedModel{
-		ID: "content_model", 
-		Algorithm: "content_based", 
-		Status: ModelStatusTrained, 
-		CreatedAt: time.Now(),
+		ID:           "content_model",
+		Algorithm:    "content_based",
+		Status:       ModelStatusTrained,
+		CreatedAt:    time.Now(),
 		TrainingTime: trainingTime,
 		TrainingMetrics: &TrainingMetrics{
 			TrainLoss:      []float64{1.5, 1.2, 1.0, 0.9, 0.85},
@@ -942,7 +884,9 @@ func (mcb *MockContentBased) Train(ctx context.Context, trainingData *TrainingDa
 func (mcb *MockContentBased) Predict(ctx context.Context, model *TrainedModel, input *PredictionInput) (*PredictionOutput, error) {
 	return &PredictionOutput{UserID: input.UserID, ModelID: model.ID, Timestamp: time.Now()}, nil
 }
-func (mcb *MockContentBased) GetHyperParameters() map[string]HyperParameter { return make(map[string]HyperParameter) }
+func (mcb *MockContentBased) GetHyperParameters() map[string]HyperParameter {
+	return make(map[string]HyperParameter)
+}
 func (mcb *MockContentBased) GetMetrics() *AlgorithmMetrics { return &AlgorithmMetrics{} }
 
 func (mmf *MockMatrixFactorization) Name() string { return "matrix_factorization" }
@@ -950,12 +894,12 @@ func (mmf *MockMatrixFactorization) Train(ctx context.Context, trainingData *Tra
 	start := time.Now()
 	time.Sleep(time.Millisecond * 100)
 	trainingTime := time.Since(start)
-	
+
 	return &TrainedModel{
-		ID: "mf_model", 
-		Algorithm: "matrix_factorization", 
-		Status: ModelStatusTrained, 
-		CreatedAt: time.Now(),
+		ID:           "mf_model",
+		Algorithm:    "matrix_factorization",
+		Status:       ModelStatusTrained,
+		CreatedAt:    time.Now(),
 		TrainingTime: trainingTime,
 		TrainingMetrics: &TrainingMetrics{
 			TrainLoss:      []float64{1.8, 1.4, 1.1, 0.95, 0.88},
@@ -970,7 +914,9 @@ func (mmf *MockMatrixFactorization) Train(ctx context.Context, trainingData *Tra
 func (mmf *MockMatrixFactorization) Predict(ctx context.Context, model *TrainedModel, input *PredictionInput) (*PredictionOutput, error) {
 	return &PredictionOutput{UserID: input.UserID, ModelID: model.ID, Timestamp: time.Now()}, nil
 }
-func (mmf *MockMatrixFactorization) GetHyperParameters() map[string]HyperParameter { return make(map[string]HyperParameter) }
+func (mmf *MockMatrixFactorization) GetHyperParameters() map[string]HyperParameter {
+	return make(map[string]HyperParameter)
+}
 func (mmf *MockMatrixFactorization) GetMetrics() *AlgorithmMetrics { return &AlgorithmMetrics{} }
 
 func (mdl *MockDeepLearning) Name() string { return "deep_learning" }
@@ -978,12 +924,12 @@ func (mdl *MockDeepLearning) Train(ctx context.Context, trainingData *TrainingDa
 	start := time.Now()
 	time.Sleep(time.Millisecond * 100)
 	trainingTime := time.Since(start)
-	
+
 	return &TrainedModel{
-		ID: "dl_model", 
-		Algorithm: "deep_learning", 
-		Status: ModelStatusTrained, 
-		CreatedAt: time.Now(),
+		ID:           "dl_model",
+		Algorithm:    "deep_learning",
+		Status:       ModelStatusTrained,
+		CreatedAt:    time.Now(),
 		TrainingTime: trainingTime,
 		TrainingMetrics: &TrainingMetrics{
 			TrainLoss:      []float64{2.1, 1.6, 1.2, 0.9, 0.78},
@@ -998,5 +944,7 @@ func (mdl *MockDeepLearning) Train(ctx context.Context, trainingData *TrainingDa
 func (mdl *MockDeepLearning) Predict(ctx context.Context, model *TrainedModel, input *PredictionInput) (*PredictionOutput, error) {
 	return &PredictionOutput{UserID: input.UserID, ModelID: model.ID, Timestamp: time.Now()}, nil
 }
-func (mdl *MockDeepLearning) GetHyperParameters() map[string]HyperParameter { return make(map[string]HyperParameter) }
+func (mdl *MockDeepLearning) GetHyperParameters() map[string]HyperParameter {
+	return make(map[string]HyperParameter)
+}
 func (mdl *MockDeepLearning) GetMetrics() *AlgorithmMetrics { return &AlgorithmMetrics{} }
